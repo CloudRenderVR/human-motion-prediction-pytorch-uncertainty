@@ -1,7 +1,8 @@
 
 ## human-motion-prediction
+This should eventually be an addition of uncertainty prediction (in the form of a covariance matrix) to
 
-This is a pytorch implementation of the paper
+the pytorch implementation of the paper
 
 Julieta Martinez, Michael J. Black, Javier Romero.
 _On human motion prediction using recurrent neural networks_. In CVPR 17.
