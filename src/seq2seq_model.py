@@ -36,7 +36,7 @@ class Seq2SeqModel(nn.Module):
                learning_rate_decay_factor,
                loss_to_use,
                number_of_actions,
-               one_hot=True,
+               one_hot=False,
                residual_velocities=False,
                dropout=0.0,
                dtype=torch.float32):
@@ -65,6 +65,7 @@ class Seq2SeqModel(nn.Module):
     super(Seq2SeqModel, self).__init__()
 
     self.HUMAN_SIZE = 54
+    #Don't think I'll support one_hot
     self.input_size = self.HUMAN_SIZE + number_of_actions if one_hot else self.HUMAN_SIZE
 
     print( "One hot is ", one_hot )
@@ -84,7 +85,9 @@ class Seq2SeqModel(nn.Module):
 #    self.cell2 = torch.nn.GRUCell(self.rnn_size, self.rnn_size)
 
     self.fc1 = nn.Linear(self.rnn_size, self.input_size)
-
+    #Assuming rotations are 3 DOf each, then we need 3 times that for a covariance matrix
+    #Unsure how it handles the one hot in output, since it seems to just add to input vector??? And they need to have input line up with output...
+    self.fc2 = nn.Linear(self.rnn_size, self.HUMAN_SIZE*3)
 
   def forward(self, encoder_inputs, decoder_inputs):
     def loop_function(prev, i):
@@ -108,6 +111,7 @@ class Seq2SeqModel(nn.Module):
 #            state2 = state2.cuda()
 
     outputs = []
+    covar_outputs = []
     prev = None
     for i, inp in enumerate(decoder_inputs):
       if loop_function is not None and prev is not None:
@@ -121,8 +125,11 @@ class Seq2SeqModel(nn.Module):
 #      output = inp + self.fc1(state2)
       
 #      state = F.dropout(state, self.dropout, training=self.training)
+      #Gonna guess inp is just here to predict change from previous state
       output = inp + self.fc1(F.dropout(state, self.dropout, training=self.training))
+      covar_output = self.fc2(F.dropout(state, self.dropout, training=self.training))
 
+      covar_outputs.append(covar_output.view([1, batchsize, self.input_size*3]))
       outputs.append(output.view([1, batchsize, self.input_size]))
       if loop_function is not None:
         prev = output
@@ -130,7 +137,9 @@ class Seq2SeqModel(nn.Module):
 #    return outputs, state
 
     outputs = torch.cat(outputs, 0)
-    return torch.transpose(outputs, 0, 1)
+    covar_outputs = torch.cat(covar_outputs, 0)
+    #torch.reshape(covar_outputs, (self.HUMAN_SIZE / 3, 3, 3))
+    return (torch.transpose(outputs, 0, 1), torch.reshape(covar_outputs, (self.HUMAN_SIZE/3, 3, 3)))
 
 
   def get_batch( self, data, actions ):
