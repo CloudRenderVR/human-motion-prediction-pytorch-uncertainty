@@ -135,6 +135,39 @@ def create_model(actions, sampling=False):
     model.target_seq_len = 100
   return model
 
+# Negative log likelihood
+def get_loss(preds, covars, decoder_outputs, model):
+    # step_loss = (preds-decoder_outputs)**2
+    # step_loss = step_loss.mean()
+    pred_vecs = torch.reshape(decoder_outputs - preds,
+                              (model.batch_size, model.target_seq_len, int(model.HUMAN_SIZE / 3), 3, 1))
+    covars = covars
+
+    # From https://stats.stackexchange.com/questions/416891/computing-probability-density-function-at-a-point-given-the-covariance-matrix-a
+    # -log likelihood as loss
+
+    # det          -Determinate (piecewise for last 2 dimension, if shape was (5, 2, 2) you would get 5 determinates
+    # transpose    -Swap last 2 dimensions to treat each as a vector
+    # inverse      -Takes inverse, same as determinate in only applying on the last 2 dimensions
+    # matmul       -Matrix multiply. Think it does batching also? Really need to look at these shapes
+    p1 = torch.det(covars)
+    p1 = .5 * p1
+
+    p21 = torch.transpose(pred_vecs, -1, -2)
+
+    p221 = torch.inverse(covars)
+    p22 = torch.matmul(p221, pred_vecs)
+
+    p2 = torch.matmul(p21, p22)
+    p2 = .5 * p2
+
+    p2 = torch.reshape(p2, p2.shape[0:-2])
+
+    step_loss = p1 + p2
+
+    # Still average across batch?
+    step_loss = step_loss.mean()
+    return step_loss
 
 def train():
   """Train a seq2seq model on human motion"""
@@ -190,36 +223,7 @@ def train():
 
       (preds, covars) = model(encoder_inputs, decoder_inputs)
       
-      #step_loss = (preds-decoder_outputs)**2
-      #step_loss = step_loss.mean()
-      pred_vecs = torch.reshape(decoder_outputs - preds, (model.batch_size, model.target_seq_len, int(model.HUMAN_SIZE/3), 3, 1))
-      covars = covars
-
-
-      #From https://stats.stackexchange.com/questions/416891/computing-probability-density-function-at-a-point-given-the-covariance-matrix-a
-      #-log likelihood as loss
-
-      #det          -Determinate (piecewise for last 2 dimension, if shape was (5, 2, 2) you would get 5 determinates
-      #transpose    -Swap last 2 dimensions to treat each as a vector
-      #inverse      -Takes inverse, same as determinate in only applying on the last 2 dimensions
-      #matmul       -Matrix multiply. Think it does batching also? Really need to look at these shapes
-      p1 = torch.det(covars)
-      p1 = .5 * p1
-
-      p21 = torch.transpose(pred_vecs, -1, -2)
-
-      p221 = torch.inverse(covars)
-      p22  = torch.matmul( p221, pred_vecs)
-
-      p2 = torch.matmul(p21, p22)
-      p2 = .5 * p2
-      
-      p2 = torch.reshape(p2, p2.shape[0:-2])
-
-      step_loss = p1 + p2
-
-      #Still average across batch?
-      step_loss = step_loss.mean()
+      step_loss = get_loss(preds, covars, decoder_outputs, model)
 
       # Actual backpropagation
       step_loss.backward()
@@ -258,35 +262,9 @@ def train():
         decoder_inputs = Variable(decoder_inputs)
         decoder_outputs = Variable(decoder_outputs)
 
-        #preds = model(encoder_inputs, decoder_inputs)
-
-        #step_loss = (preds-decoder_outputs)**2
-        #step_loss = step_loss.mean()
         (preds, covars) = model(encoder_inputs, decoder_inputs)
 
-        # step_loss = (preds-decoder_outputs)**2
-        # step_loss = step_loss.mean()
-
-        pred_vecs = torch.reshape(preds, (model.batch_size, model.target_seq_len, int(model.HUMAN_SIZE/3), 1, 3))
-        covars = covars
-
-        # From https://stats.stackexchange.com/questions/416891/computing-probability-density-function-at-a-point-given-the-covariance-matrix-a
-        # -log likelihood as loss
-
-        # det          -Determinate (piecewise for last 2 dimension, if shape was (5, 2, 2) you would get 5 determinates
-        # transpose    -Swap last 2 dimensions to treat each as a vector
-        # inverse      -Takes inverse, same as determinate in only applying on the last 2 dimensions
-        # matmul       -Matrix multiply. Think it does batching also? Really need to look at these shapes
-        step_loss = .5 * torch.det(covars) + .5 * torch.matmul(torch.transpose(pred_vecs, -1, -2),
-                                                               torch.matmul(torch.inverse(covars), pred_vecs))
-        # Still average across batch?
-        step_loss = step_loss.mean()
-
-        # Actual backpropagation
-        step_loss.backward()
-
-
-        val_loss = step_loss # Loss book-keeping
+        val_loss = get_loss(preds, covars, decoder_outputs, model) # Loss book-keeping
 
         print()
         print("{0: <16} |".format("milliseconds"), end="")
