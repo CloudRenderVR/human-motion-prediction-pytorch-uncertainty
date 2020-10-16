@@ -231,7 +231,7 @@ def train():
 
       step_loss = step_loss.cpu().data.numpy()
 
-      if current_step % 10 == 0:
+      if current_step % 1 == 0:
         print("step {0:04d}; step_loss: {1:.4f}".format(current_step, step_loss ))
 
       step_time += (time.time() - start_time) / args.test_every
