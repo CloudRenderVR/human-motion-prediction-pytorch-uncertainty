@@ -189,11 +189,12 @@ def train():
       decoder_outputs = Variable(decoder_outputs)
 
       (preds, covars) = model(encoder_inputs, decoder_inputs)
-
+      
+      import pdb; pdb.set_trace()
       #step_loss = (preds-decoder_outputs)**2
       #step_loss = step_loss.mean()
 
-      pred_vecs = torch.reshape(preds, (model.HUMAN_SIZE/3, 1, 3))
+      pred_vecs = torch.reshape(preds, (model.batch_size, model.target_seq_len, int(model.HUMAN_SIZE/3), 1, 3))
       covars = covars
 
 
@@ -204,7 +205,7 @@ def train():
       #transpose    -Swap last 2 dimensions to treat each as a vector
       #inverse      -Takes inverse, same as determinate in only applying on the last 2 dimensions
       #matmul       -Matrix multiply. Think it does batching also? Really need to look at these shapes
-      step_loss = .5 * torch.det(covars) + .5 * torch.matmul(torch.transpose(pred_vecs, 1, 2), torch.matmul( torch.inverse(covars), pred_vecs))
+      step_loss = .5 * torch.det(covars) + .5 * torch.matmul(torch.transpose(pred_vecs, -1, -2), torch.matmul( torch.inverse(covars), pred_vecs))
       #Still average across batch?
       step_loss = step_loss.mean()
 
@@ -254,7 +255,7 @@ def train():
         # step_loss = (preds-decoder_outputs)**2
         # step_loss = step_loss.mean()
 
-        pred_vecs = torch.reshape(preds, (model.HUMAN_SIZE / 3, 1, 3))
+        pred_vecs = torch.reshape(preds, (model.batch_size, model.target_seq_len, int(model.HUMAN_SIZE/3), 1, 3))
         covars = covars
 
         # From https://stats.stackexchange.com/questions/416891/computing-probability-density-function-at-a-point-given-the-covariance-matrix-a
@@ -264,7 +265,7 @@ def train():
         # transpose    -Swap last 2 dimensions to treat each as a vector
         # inverse      -Takes inverse, same as determinate in only applying on the last 2 dimensions
         # matmul       -Matrix multiply. Think it does batching also? Really need to look at these shapes
-        step_loss = .5 * torch.det(covars) + .5 * torch.matmul(torch.transpose(pred_vecs, 1, 2),
+        step_loss = .5 * torch.det(covars) + .5 * torch.matmul(torch.transpose(pred_vecs, -1, -2),
                                                                torch.matmul(torch.inverse(covars), pred_vecs))
         # Still average across batch?
         step_loss = step_loss.mean()

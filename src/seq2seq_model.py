@@ -139,7 +139,7 @@ class Seq2SeqModel(nn.Module):
     outputs = torch.cat(outputs, 0)
     covar_outputs = torch.cat(covar_outputs, 0)
     #torch.reshape(covar_outputs, (self.HUMAN_SIZE / 3, 3, 3))
-    return (torch.transpose(outputs, 0, 1), torch.reshape(covar_outputs, (self.HUMAN_SIZE/3, 3, 3)))
+    return (torch.transpose(outputs, 0, 1), torch.reshape(covar_outputs, (self.batch_size, self.target_seq_len, int(self.HUMAN_SIZE/3), 3, 3)))
 
 
   def get_batch( self, data, actions ):
