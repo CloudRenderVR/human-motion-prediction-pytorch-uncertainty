@@ -205,7 +205,19 @@ def train():
       #transpose    -Swap last 2 dimensions to treat each as a vector
       #inverse      -Takes inverse, same as determinate in only applying on the last 2 dimensions
       #matmul       -Matrix multiply. Think it does batching also? Really need to look at these shapes
-      step_loss = .5 * torch.det(covars) + .5 * torch.matmul(torch.transpose(pred_vecs, -1, -2), torch.matmul( torch.inverse(covars), pred_vecs))
+      p1 = torch.det(covars)
+      p1 = .5 * p1
+
+      p21 = torch.transpose(pred_vecs, -1, -2)
+
+      p221 = torch.inverse(covars)
+      p22  = torch.matmul( p221, pred_vecs)
+
+      p2 = torch.matmul(p21, p22)
+      p2 = .5 * p2
+
+      step_loss = p1 + p2
+
       #Still average across batch?
       step_loss = step_loss.mean()
 
