@@ -190,11 +190,9 @@ def train():
 
       (preds, covars) = model(encoder_inputs, decoder_inputs)
       
-      import pdb; pdb.set_trace()
       #step_loss = (preds-decoder_outputs)**2
       #step_loss = step_loss.mean()
-
-      pred_vecs = torch.reshape(preds, (model.batch_size, model.target_seq_len, int(model.HUMAN_SIZE/3), 1, 3))
+      pred_vecs = torch.reshape(decoder_outputs - preds, (model.batch_size, model.target_seq_len, int(model.HUMAN_SIZE/3), 3, 1))
       covars = covars
 
 
@@ -215,6 +213,8 @@ def train():
 
       p2 = torch.matmul(p21, p22)
       p2 = .5 * p2
+      
+      p2 = torch.reshape(p2, p2.shape[0:-2])
 
       step_loss = p1 + p2
 
