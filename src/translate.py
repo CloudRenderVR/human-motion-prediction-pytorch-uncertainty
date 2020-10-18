@@ -135,6 +135,20 @@ def create_model(actions, sampling=False):
     model.target_seq_len = 100
   return model
 
+def clean_batch(batch):
+    encoder_inputs, decoder_inputs, decoder_outputs = batch
+    encoder_inputs = torch.from_numpy(encoder_inputs).float()
+    decoder_inputs = torch.from_numpy(decoder_inputs).float()
+    decoder_outputs = torch.from_numpy(decoder_outputs).float()
+    if not args.use_cpu:
+        encoder_inputs = encoder_inputs.cuda()
+        decoder_inputs = decoder_inputs.cuda()
+        decoder_outputs = decoder_outputs.cuda()
+    encoder_inputs = Variable(encoder_inputs)
+    decoder_inputs = Variable(decoder_inputs)
+    decoder_outputs = Variable(decoder_outputs)
+
+    return (encoder_inputs, decoder_inputs, decoder_outputs)
 
 def train():
   """Train a seq2seq model on human motion"""
@@ -176,18 +190,7 @@ def train():
       # Actual training
 
       # === Training step ===
-      encoder_inputs, decoder_inputs, decoder_outputs = model.get_batch( train_set, not args.omit_one_hot )
-      encoder_inputs = torch.from_numpy(encoder_inputs).float()
-      decoder_inputs = torch.from_numpy(decoder_inputs).float()
-      decoder_outputs = torch.from_numpy(decoder_outputs).float()
-      if not args.use_cpu:
-        encoder_inputs = encoder_inputs.cuda()
-        decoder_inputs = decoder_inputs.cuda()
-        decoder_outputs = decoder_outputs.cuda()
-      encoder_inputs = Variable(encoder_inputs)
-      decoder_inputs = Variable(decoder_inputs)
-      decoder_outputs = Variable(decoder_outputs)
-
+      encoder_inputs, decoder_inputs, decoder_outputs = clean_batch(model.get_batch( train_set, not args.omit_one_hot ))
       preds = model(encoder_inputs, decoder_inputs)
 
       step_loss = (preds-decoder_outputs)**2
@@ -218,17 +221,7 @@ def train():
         model.eval()
 
         # === Validation with randomly chosen seeds ===
-        encoder_inputs, decoder_inputs, decoder_outputs = model.get_batch( test_set, not args.omit_one_hot )
-        encoder_inputs = torch.from_numpy(encoder_inputs).float()
-        decoder_inputs = torch.from_numpy(decoder_inputs).float()
-        decoder_outputs = torch.from_numpy(decoder_outputs).float()
-        if not args.use_cpu:
-          encoder_inputs = encoder_inputs.cuda()
-          decoder_inputs = decoder_inputs.cuda()
-          decoder_outputs = decoder_outputs.cuda()
-        encoder_inputs = Variable(encoder_inputs)
-        decoder_inputs = Variable(decoder_inputs)
-        decoder_outputs = Variable(decoder_outputs)
+        encoder_inputs, decoder_inputs, decoder_outputs = clean_batch(model.get_batch( test_set, not args.omit_one_hot ))
   
         preds = model(encoder_inputs, decoder_inputs)
   
@@ -247,19 +240,8 @@ def train():
         for action in actions:
 
           # Evaluate the model on the test batches
-          encoder_inputs, decoder_inputs, decoder_outputs = model.get_batch_srnn( test_set, action )
           #### Evaluate model on action
-  
-          encoder_inputs = torch.from_numpy(encoder_inputs).float()
-          decoder_inputs = torch.from_numpy(decoder_inputs).float()
-          decoder_outputs = torch.from_numpy(decoder_outputs).float()
-          if not args.use_cpu:
-            encoder_inputs = encoder_inputs.cuda()
-            decoder_inputs = decoder_inputs.cuda()
-            decoder_outputs = decoder_outputs.cuda()
-          encoder_inputs = Variable(encoder_inputs)
-          decoder_inputs = Variable(decoder_inputs)
-          decoder_outputs = Variable(decoder_outputs)
+          encoder_inputs, decoder_inputs, decoder_outputs = clean_batch(model.get_batch(test_set, action))
     
           srnn_poses = model(encoder_inputs, decoder_inputs)
 
