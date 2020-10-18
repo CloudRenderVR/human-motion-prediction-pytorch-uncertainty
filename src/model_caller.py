@@ -1,4 +1,7 @@
+import torch
+
 from src import data_utils
+import
 import numpy as np
 
 def predict(model, poses_in, current):
@@ -31,3 +34,11 @@ def predict(model, poses_in, current):
 
     out = model(encoder_inputs, decoder_inputs)
 
+#Hardcoded as a test
+if __name__ == "__main__":
+    filename  = "./data/h3.6m/dataset/S1/walking_1.txt"
+    model_location = "./experiments/walking/out_25/iterations_10000/tied/sampling_based/one_hot/depth_1/size_1024/lr_0.005/residual_vel/model_10000"
+    import pdb; pdb.set_trace()
+    action_sequence = data_utils.readCSVasFloat(filename)
+    model = torch.load(model_location)
+    predict(model, action_sequence, 30)
