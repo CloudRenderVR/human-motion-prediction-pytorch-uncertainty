@@ -135,6 +135,28 @@ def create_model(actions, sampling=False):
     model.target_seq_len = 100
   return model
 
+def clean_batch(batch):
+    encoder_inputs, decoder_inputs, decoder_outputs = batch
+    encoder_inputs = torch.from_numpy(encoder_inputs).float()
+    decoder_inputs = torch.from_numpy(decoder_inputs).float()
+    decoder_outputs = torch.from_numpy(decoder_outputs).float()
+    if not args.use_cpu:
+        encoder_inputs = encoder_inputs.cuda()
+        decoder_inputs = decoder_inputs.cuda()
+        decoder_outputs = decoder_outputs.cuda()
+    encoder_inputs = Variable(encoder_inputs)
+    decoder_inputs = Variable(decoder_inputs)
+    decoder_outputs = Variable(decoder_outputs)
+
+
+    encoder_inputs_mean = torch.mean(encoder_inputs)
+    decoder_inputs_mean = torch.mean(decoder_inputs)
+    shape_encoder = encoder_inputs.size()
+    shape_decoder = decoder_inputs.size()
+    encoder_inputs +=  torch.normal(mean=0,std= torch.abs(encoder_inputs_mean), size=shape_encoder).cuda()
+    decoder_inputs +=  torch.normal(mean=0,std= torch.abs(decoder_inputs_mean), size=shape_decoder).cuda()
+
+    return (encoder_inputs, decoder_inputs, decoder_outputs)
 
 def train():
   """Train a seq2seq model on human motion"""
@@ -176,30 +198,7 @@ def train():
       # Actual training
 
       # === Training step ===
-      encoder_inputs, decoder_inputs, decoder_outputs = model.get_batch( train_set, not args.omit_one_hot )
-      encoder_inputs = torch.from_numpy(encoder_inputs).float()
-      decoder_inputs = torch.from_numpy(decoder_inputs).float()
-      decoder_outputs = torch.from_numpy(decoder_outputs).float()
-      if not args.use_cpu:
-        encoder_inputs = encoder_inputs.cuda()
-        decoder_inputs = decoder_inputs.cuda()
-        decoder_outputs = decoder_outputs.cuda()
-      encoder_inputs = Variable(encoder_inputs) 
-      decoder_inputs = Variable(decoder_inputs)
-      decoder_outputs = Variable(decoder_outputs)
-
-      # encoder_inputs_mean = torch.mean(encoder_inputs)
-      encoder_inputs_mean = torch.mean(encoder_inputs)
-      # decoder_inputs_mean = torch.mean(decoder_inputs)
-      decoder_inputs_mean = torch.mean(decoder_inputs)
-
-      encoder_inputs +=  torch.normal(mean=0,std= torch.abs(encoder_inputs_mean), size=(16, 49, 55)).cuda()
-      decoder_inputs +=  torch.normal(mean=0,std= torch.abs(decoder_inputs_mean), size=(16, 25, 55)).cuda()
-      # print("SIZE:", decoder_outputs.size())
-      # print(torch.normal(mean=encoder_inputs_mean,std= encoder_inputs_std ).size())
-      # #print(torch.normal(mean=torch.from_numpy(data_mean), std=torch.from_numpy(data_std)))
-      # print("HEREEEEEE: ", torch.normal(mean=encoder_inputs_mean, std=encoder_inputs_std, size=(16, 49, 55)).size())
-      #print("here2: ", encoder_inputs)
+      encoder_inputs, decoder_inputs, decoder_outputs = clean_batch(model.get_batch( train_set, not args.omit_one_hot ))
       preds = model(encoder_inputs, decoder_inputs)
 
       step_loss = (preds-decoder_outputs)**2
@@ -230,17 +229,7 @@ def train():
         model.eval()
 
         # === Validation with randomly chosen seeds ===
-        encoder_inputs, decoder_inputs, decoder_outputs = model.get_batch( test_set, not args.omit_one_hot )
-        encoder_inputs = torch.from_numpy(encoder_inputs).float()
-        decoder_inputs = torch.from_numpy(decoder_inputs).float()
-        decoder_outputs = torch.from_numpy(decoder_outputs).float()
-        if not args.use_cpu:
-          encoder_inputs = encoder_inputs.cuda()
-          decoder_inputs = decoder_inputs.cuda()
-          decoder_outputs = decoder_outputs.cuda()
-        encoder_inputs = Variable(encoder_inputs)
-        decoder_inputs = Variable(decoder_inputs)
-        decoder_outputs = Variable(decoder_outputs)
+        encoder_inputs, decoder_inputs, decoder_outputs = clean_batch(model.get_batch( test_set, not args.omit_one_hot ))
   
         preds = model(encoder_inputs, decoder_inputs)
   
@@ -259,28 +248,9 @@ def train():
         for action in actions:
 
           # Evaluate the model on the test batches
-          encoder_inputs, decoder_inputs, decoder_outputs = model.get_batch_srnn( test_set, action )
           #### Evaluate model on action
-  
-          encoder_inputs = torch.from_numpy(encoder_inputs).float()
-          decoder_inputs = torch.from_numpy(decoder_inputs).float()
-          decoder_outputs = torch.from_numpy(decoder_outputs).float()
-          if not args.use_cpu:
-            encoder_inputs = encoder_inputs.cuda()
-            decoder_inputs = decoder_inputs.cuda()
-            decoder_outputs = decoder_outputs.cuda()
-          encoder_inputs = Variable(encoder_inputs)
-          decoder_inputs = Variable(decoder_inputs)
-          decoder_outputs = Variable(decoder_outputs)
-          
-          # encoder_inputs_mean = torch.mean(encoder_inputs)
-          encoder_inputs_mean = torch.mean(encoder_inputs)
-          # decoder_inputs_mean = torch.mean(decoder_inputs)
-          decoder_inputs_mean = torch.mean(decoder_inputs)
-          shape_encoder = encoder_inputs.size()
-          shape_decoder = decoder_inputs.size()
-          encoder_inputs +=  torch.normal(mean=0,std= torch.abs(encoder_inputs_mean), size=shape_encoder).cuda()
-          decoder_inputs +=  torch.normal(mean=0,std= torch.abs(decoder_inputs_mean), size=shape_decoder).cuda()
+          encoder_inputs, decoder_inputs, decoder_outputs = clean_batch(model.get_batch(test_set, action))
+    
           srnn_poses = model(encoder_inputs, decoder_inputs)
 
 
