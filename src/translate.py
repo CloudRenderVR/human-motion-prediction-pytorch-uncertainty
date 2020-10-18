@@ -184,10 +184,22 @@ def train():
         encoder_inputs = encoder_inputs.cuda()
         decoder_inputs = decoder_inputs.cuda()
         decoder_outputs = decoder_outputs.cuda()
-      encoder_inputs = Variable(encoder_inputs)
+      encoder_inputs = Variable(encoder_inputs) 
       decoder_inputs = Variable(decoder_inputs)
       decoder_outputs = Variable(decoder_outputs)
 
+      # encoder_inputs_mean = torch.mean(encoder_inputs)
+      encoder_inputs_mean = torch.mean(encoder_inputs)
+      # decoder_inputs_mean = torch.mean(decoder_inputs)
+      decoder_inputs_mean = torch.mean(decoder_inputs)
+
+      encoder_inputs +=  torch.normal(mean=0,std= torch.abs(encoder_inputs_mean), size=(16, 49, 55)).cuda()
+      decoder_inputs +=  torch.normal(mean=0,std= torch.abs(decoder_inputs_mean), size=(16, 25, 55)).cuda()
+      # print("SIZE:", decoder_outputs.size())
+      # print(torch.normal(mean=encoder_inputs_mean,std= encoder_inputs_std ).size())
+      # #print(torch.normal(mean=torch.from_numpy(data_mean), std=torch.from_numpy(data_std)))
+      # print("HEREEEEEE: ", torch.normal(mean=encoder_inputs_mean, std=encoder_inputs_std, size=(16, 49, 55)).size())
+      #print("here2: ", encoder_inputs)
       preds = model(encoder_inputs, decoder_inputs)
 
       step_loss = (preds-decoder_outputs)**2
@@ -260,7 +272,15 @@ def train():
           encoder_inputs = Variable(encoder_inputs)
           decoder_inputs = Variable(decoder_inputs)
           decoder_outputs = Variable(decoder_outputs)
-    
+          
+          # encoder_inputs_mean = torch.mean(encoder_inputs)
+          encoder_inputs_mean = torch.mean(encoder_inputs)
+          # decoder_inputs_mean = torch.mean(decoder_inputs)
+          decoder_inputs_mean = torch.mean(decoder_inputs)
+          shape_encoder = encoder_inputs.size()
+          shape_decoder = decoder_inputs.size()
+          encoder_inputs +=  torch.normal(mean=0,std= torch.abs(encoder_inputs_mean), size=shape_encoder).cuda()
+          decoder_inputs +=  torch.normal(mean=0,std= torch.abs(decoder_inputs_mean), size=shape_decoder).cuda()
           srnn_poses = model(encoder_inputs, decoder_inputs)
 
 

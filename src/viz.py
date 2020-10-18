@@ -69,4 +69,4 @@ class Ax3DPose(object):
     self.ax.set_zlim3d([-r+zroot, r+zroot])
     self.ax.set_ylim3d([-r+yroot, r+yroot])
 
-    self.ax.set_aspect('equal')
+    #self.ax.set_aspect('equal')
