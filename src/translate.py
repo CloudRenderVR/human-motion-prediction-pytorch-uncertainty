@@ -142,7 +142,7 @@ def get_loss(preds, covars, decoder_outputs, model):
     pred_vecs = torch.reshape(decoder_outputs - preds,
                               (model.batch_size, model.target_seq_len, int(model.HUMAN_SIZE / 3), 3, 1))
     covars = covars
-
+    
     # From https://stats.stackexchange.com/questions/416891/computing-probability-density-function-at-a-point-given-the-covariance-matrix-a
     # -log likelihood as loss
 
@@ -151,6 +151,9 @@ def get_loss(preds, covars, decoder_outputs, model):
     # inverse      -Takes inverse, same as determinate in only applying on the last 2 dimensions
     # matmul       -Matrix multiply. Think it does batching also? Really need to look at these shapes
     p1 = torch.det(covars)
+    p1 = torch.clamp(p1, min=0.0000000000001)
+    p1 = torch.log(p1)
+
     p1 = .5 * p1
 
     p21 = torch.transpose(pred_vecs, -1, -2)
@@ -167,7 +170,7 @@ def get_loss(preds, covars, decoder_outputs, model):
 
     # Still average across batch?
     step_loss = step_loss.mean()
-    return step_loss
+    return step_loss 
 
 def train():
   """Train a seq2seq model on human motion"""
@@ -178,7 +181,6 @@ def train():
 
   train_set, test_set, data_mean, data_std, dim_to_ignore, dim_to_use = read_all_data(
     actions, args.seq_length_in, args.seq_length_out, args.data_dir, not args.omit_one_hot )
-
   # Limit TF to take a fraction of the GPU memory
 
   if True:

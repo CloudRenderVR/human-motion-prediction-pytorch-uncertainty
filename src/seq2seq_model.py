@@ -163,7 +163,6 @@ class Seq2SeqModel(nn.Module):
     encoder_inputs  = np.zeros((self.batch_size, self.source_seq_len-1, self.input_size), dtype=float)
     decoder_inputs  = np.zeros((self.batch_size, self.target_seq_len, self.input_size), dtype=float)
     decoder_outputs = np.zeros((self.batch_size, self.target_seq_len, self.input_size), dtype=float)
-
     for i in xrange( self.batch_size ):
 
       the_key = all_keys[ chosen_keys[i] ]
