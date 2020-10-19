@@ -148,7 +148,6 @@ def clean_batch(batch):
     decoder_inputs = Variable(decoder_inputs)
     decoder_outputs = Variable(decoder_outputs)
 
-
     encoder_inputs_mean = torch.mean(encoder_inputs)
     decoder_inputs_mean = torch.mean(decoder_inputs)
     shape_encoder = encoder_inputs.size()
