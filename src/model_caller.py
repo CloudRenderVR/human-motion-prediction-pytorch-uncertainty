@@ -57,7 +57,7 @@ def predict(model, poses_in, current):
 #poses: (samples, output_frames, 99)
 #covars: (output_frames, 33, 3, 3)
 def get_covars(poses):
-    covars = np.zeros((33, 3, 3))
+    covars = np.zeros((poses.shape[1], 33, 3, 3), float)
     for i in range(0, 33):
         for j in range(poses.shape[0]):
             poses_subsection = poses[:, j, i*3 : i*3+3]
@@ -65,8 +65,7 @@ def get_covars(poses):
     return covars
 
 def get_both(n_samples, model, poses_in, current_frame):
-
-    pose_samples = np.zeros(n_samples, model.target_seq_len, 99)
+    pose_samples = np.zeros((n_samples, model.target_seq_len, 99), float)
 
     for i in range(n_samples):
         pose_samples[i, :, :] = predict(model, poses_in, current_frame)
