@@ -57,11 +57,12 @@ def predict(model, poses_in, current):
 #poses: (samples, output_frames, 99)
 #covars: (output_frames, 33, 3, 3)
 def get_covars(poses):
+    import pdb; pdb.set_trace()
     covars = np.zeros((poses.shape[1], 33, 3, 3), float)
     for i in range(0, 33):
         for j in range(poses.shape[0]):
             poses_subsection = poses[:, j, i*3 : i*3+3]
-            covars[j, i, :, :] = np.cov(poses_subsection)
+            covars[j, i, :, :] = np.cov(poses_subsection, rowvar=False)
     return covars
 
 def get_both(n_samples, model, poses_in, current_frame):
@@ -82,5 +83,5 @@ if __name__ == "__main__":
     model_location = "./experiments/walking/out_25/iterations_10000/tied/sampling_based/omit_one_hot/depth_1/size_1024/lr_0.005/residual_vel/model_10000"
     action_sequence = data_utils.readCSVasFloat(filename)
     model = torch.load(model_location)
-    prediction = get_both(3, model, action_sequence, 70)
+    prediction = get_both(5, model, action_sequence, 70)
     pass
