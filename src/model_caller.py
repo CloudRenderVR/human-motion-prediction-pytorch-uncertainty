@@ -7,13 +7,11 @@ def predict(model, poses_in, current):
     """Use a saved model on the sequence of input poses.
     Args
         model: the saved pytorch model
-        poses_in: The sequence of input poses. Expects an (n, 99)? numpy array.
+        poses_in: The sequence of input poses. Expects an (source_seq_length, 99)? numpy array.
         current: The index of the current pose in the sequence to predict from.
     Returns
-        poses_out: A numpy array of size (seq_length, 99)? output. seq_length
-         will be taking from the saved model.
-        covariances: A numpy array of size (seq_length, 33, 3, 3) specifying the
-         covariance matrix for each corresponding pose in poses_out
+        poses_out: A numpy array of size (target_seq_length, 99)? output. target_seq_length
+         will be taken from the saved model.
     """
 
     #This standardizes from mean and std of all the data. Might not be best to use on a single case
@@ -57,9 +55,13 @@ def predict(model, poses_in, current):
     return out_reverted[0]
 
 
-#poses: (samples, output_frames, 99)
-#covars: (output_frames, 33, 3, 3)
 def get_covars(poses):
+    """Get the covariance matrices from the samples of the network output.
+    Args
+        poses: The samples of output poses. Dimensions (n_samples, target_sequence_length, 99)
+    Returns
+        covars: Covariance matrices. Dimensions (target_sequence_length, 33, 3, 3)
+    """
     covars = np.zeros((poses.shape[1], 33, 3, 3), float)
     for i in range(0, 33):
         for j in range(poses.shape[0]):
@@ -68,6 +70,17 @@ def get_covars(poses):
     return covars
 
 def get_both(n_samples, model, poses_in, current_frame):
+    """Use a saved model on the sequence of input poses.
+    Args
+        n_samples: number of random samples to take
+        model: The pre-saved model
+        poses_in: The sequence of input poses. Expects an (n, 99)? numpy array.
+        current_frame: The index of the current pose in the sequence to predict from.
+    Returns
+        poses_out: A numpy array of size (seq_length, 99)? output. seq_length
+         will be taken from the saved model.
+        covars: Covariance matrices. Dimensions (target_sequence_length, 33, 3, 3)
+    """
     pose_samples = np.zeros((n_samples, model.target_seq_len, 99), float)
 
     for i in range(n_samples):
