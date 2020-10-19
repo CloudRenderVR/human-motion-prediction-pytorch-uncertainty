@@ -40,6 +40,9 @@ def predict(model, poses_in, current):
     encoder_inputs = torch.unsqueeze(encoder_inputs, 0)
     decoder_inputs = torch.unsqueeze(decoder_inputs, 0)
 
+    encoder_inputs += torch.normal(0.0, 0.05, encoder_inputs.shape)
+    decoder_inputs += torch.normal(0.0, 0.05, decoder_inputs.shape)
+    
     encoder_inputs = encoder_inputs.cuda()
     decoder_inputs = decoder_inputs.cuda()
 
@@ -57,7 +60,6 @@ def predict(model, poses_in, current):
 #poses: (samples, output_frames, 99)
 #covars: (output_frames, 33, 3, 3)
 def get_covars(poses):
-    import pdb; pdb.set_trace()
     covars = np.zeros((poses.shape[1], 33, 3, 3), float)
     for i in range(0, 33):
         for j in range(poses.shape[0]):

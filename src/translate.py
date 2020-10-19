@@ -147,7 +147,6 @@ def clean_batch(batch):
     encoder_inputs = Variable(encoder_inputs)
     decoder_inputs = Variable(decoder_inputs)
     decoder_outputs = Variable(decoder_outputs)
-
     return (encoder_inputs, decoder_inputs, decoder_outputs)
 
 def train():
