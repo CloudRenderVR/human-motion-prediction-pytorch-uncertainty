@@ -82,7 +82,7 @@ def get_both(n_samples, model, poses_in, current_frame):
 #Hardcoded as a test
 if __name__ == "__main__":
     filename  = "./data/h3.6m/dataset/S1/walking_1.txt"
-    model_location = "./experiments/walking/out_25/iterations_10000/tied/sampling_based/omit_one_hot/depth_1/size_1024/lr_0.005/residual_vel/model_10000"
+    model_location = "model_testing"
     action_sequence = data_utils.readCSVasFloat(filename)
     model = torch.load(model_location)
     prediction = get_both(5, model, action_sequence, 70)
