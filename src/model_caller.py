@@ -10,7 +10,7 @@ def predict(model, poses_in, current):
         poses_in: The sequence of input poses. Expects an (n, 99)? numpy array.
         current: The index of the current pose in the sequence to predict from.
     Returns
-        poses_out: A numpy array of size (seq_length, 33, 3)? output. seq_length
+        poses_out: A numpy array of size (seq_length, 99)? output. seq_length
          will be taking from the saved model.
         covariances: A numpy array of size (seq_length, 33, 3, 3) specifying the
          covariance matrix for each corresponding pose in poses_out
@@ -51,7 +51,31 @@ def predict(model, poses_in, current):
 
     out_reverted = data_utils.revert_output_format(out, data_mean, data_std, dim_to_ignore, [], False)
     #Looks like this is built to handle batches too...
-    return out_reverted[0].reshape(out_reverted[0].shape[0], 33, 3)
+    return out_reverted[0]
+
+
+#poses: (samples, output_frames, 99)
+#covars: (output_frames, 33, 3, 3)
+def get_covars(poses):
+    covars = np.zeros((33, 3, 3))
+    for i in range(0, 33):
+        for j in range(poses.shape[0]):
+            poses_subsection = poses[:, j, i*3 : i*3+3]
+            covars[j, i, :, :] = np.cov(poses_subsection)
+    return covars
+
+def get_both(n_samples, model, poses_in, current_frame):
+
+    pose_samples = np.zeros(n_samples, model.target_seq_len, 99)
+
+    for i in range(n_samples):
+        pose_samples[i, :, :] = predict(model, poses_in, current_frame)
+
+    poses_out = np.mean(pose_samples, 0)
+    covars = get_covars(pose_samples)
+
+    return (poses_out, covars)
+
 
 #Hardcoded as a test
 if __name__ == "__main__":
@@ -59,5 +83,5 @@ if __name__ == "__main__":
     model_location = "./experiments/walking/out_25/iterations_10000/tied/sampling_based/omit_one_hot/depth_1/size_1024/lr_0.005/residual_vel/model_10000"
     action_sequence = data_utils.readCSVasFloat(filename)
     model = torch.load(model_location)
-    prediction = predict(model, action_sequence, 70)
+    prediction = get_both(3, model, action_sequence, 70)
     pass
