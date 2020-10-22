@@ -38,7 +38,7 @@ class Seq2SeqModel(nn.Module):
                number_of_actions,
                one_hot=True,
                residual_velocities=False,
-               dropout=0.0,
+               dropout=0.1,
                dtype=torch.float32):
     """Create the model.
 
@@ -80,10 +80,20 @@ class Seq2SeqModel(nn.Module):
 
     # === Create the RNN that will keep the state ===
     print('rnn_size = {0}'.format( rnn_size ))
-    self.cell = torch.nn.GRUCell(self.input_size, self.rnn_size)
+
+    # If tied, then we have an encoder layer too
+    if architecture == "tied":
+      self.tied = True
+      self.cell = torch.nn.GRUCell(self.rnn_size, self.rnn_size)
+    else:
+      self.cell = torch.nn.GRUCell(self.input_size, self.rnn_size)
 #    self.cell2 = torch.nn.GRUCell(self.rnn_size, self.rnn_size)
 
-    self.fc1 = nn.Linear(self.rnn_size, self.input_size)
+    self.fc_out = nn.Linear(self.rnn_size, self.input_size)
+    if architecture == "tied":
+      self.fc_in = nn.Linear(self.input_size, self.rnn_size)
+      self.fc_in.weight = self.fc_out.weight
+
 
 
   def forward(self, encoder_inputs, decoder_inputs):
@@ -100,7 +110,10 @@ class Seq2SeqModel(nn.Module):
         state = state.cuda()
      #   state2 = state2.cuda()
     for i in range(self.source_seq_len-1):
-        state = self.cell(encoder_inputs[i], state)
+        inp = encoder_inputs[i]
+        if self.tied:
+          inp = self.fc_in(F.dropout(inp, self.dropout, training=self.training))
+        state = self.cell(inp, state)
 #        state2 = self.cell2(state, state2)
         state = F.dropout(state, self.dropout, training=self.training)
         if use_cuda:
@@ -115,13 +128,16 @@ class Seq2SeqModel(nn.Module):
 
       inp = inp.detach()
 
+      if self.tied:
+        inp = self.fc_in(F.dropout(inp, self.dropout, training=self.training))
+
       state = self.cell(inp, state)
 #      state2 = self.cell2(state, state2)
 
 #      output = inp + self.fc1(state2)
       
 #      state = F.dropout(state, self.dropout, training=self.training)
-      output = inp + self.fc1(F.dropout(state, self.dropout, training=self.training))
+      output = inp + self.fc_out(F.dropout(state, self.dropout, training=self.training))
 
       outputs.append(output.view([1, batchsize, self.input_size]))
       if loop_function is not None:

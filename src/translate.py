@@ -44,7 +44,7 @@ parser.add_argument('--iterations', dest='iterations',
                   default=1e5, type=int)
 parser.add_argument('--test_every', dest='test_every',
                   help='',
-                  default=200, type=int)
+                  default=1000, type=int)
 # Architecture
 parser.add_argument('--architecture', dest='architecture',
                   help='Seq2seq architecture to use: [basic, tied].',
@@ -201,7 +201,7 @@ def train():
 
       step_loss = step_loss.cpu().data.numpy()
 
-      if current_step % 10 == 0:
+      if current_step % 100 == 0:
         print("step {0:04d}; step_loss: {1:.4f}".format(current_step, step_loss ))
 
       step_time += (time.time() - start_time) / args.test_every
