@@ -86,13 +86,14 @@ class Seq2SeqModel(nn.Module):
       self.tied = True
       self.cell = torch.nn.GRUCell(self.rnn_size, self.rnn_size)
     else:
+      self.tied = False
       self.cell = torch.nn.GRUCell(self.input_size, self.rnn_size)
-#    self.cell2 = torch.nn.GRUCell(self.rnn_size, self.rnn_size)
 
     self.fc_out = nn.Linear(self.rnn_size, self.input_size)
     if architecture == "tied":
       self.fc_in = nn.Linear(self.input_size, self.rnn_size)
-      self.fc_in.weight = self.fc_out.weight
+      print(self.fc_out.weight.shape)
+      self.fc_in.weight = torch.nn.Parameter(self.fc_out.weight.transpose(0, 1))
 
 
 
@@ -126,12 +127,13 @@ class Seq2SeqModel(nn.Module):
       if loop_function is not None and prev is not None:
           inp = loop_function(prev, i)
 
-      inp = inp.detach()
+      inp = inp.clone() #detach()
 
       if self.tied:
-        inp = self.fc_in(F.dropout(inp, self.dropout, training=self.training))
-
-      state = self.cell(inp, state)
+        inp_enc = self.fc_in(F.dropout(inp, self.dropout, training=self.training))
+      else:
+        inp_enc = inp
+      state = self.cell(inp_enc, state)
 #      state2 = self.cell2(state, state2)
 
 #      output = inp + self.fc1(state2)
