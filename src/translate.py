@@ -314,7 +314,8 @@ def train():
               "============================" % (current_step,
               args.learning_rate, step_time*1000, loss,
               val_loss, srnn_loss))
-
+        with open("training_out.txt", 'a+') as f:
+            f.write(action + " " + str(current_step)+": "+str(val_loss)+"\n")
         torch.save(model, train_dir + '/model_' + str(current_step))
 
         print()
@@ -371,7 +372,7 @@ def get_srnn_gts( actions, model, test_set, data_mean, data_std, dim_to_ignore, 
 
 def sample():
   """Sample predictions for srnn's seeds"""
-  actions = define_actions( args.action )
+  actions = define_actions( "all")#args.action )
 
   if True:
     # === Create the model ===
@@ -392,7 +393,6 @@ def sample():
                               data_std, dim_to_ignore, not args.omit_one_hot, to_euler=False )
     srnn_gts_euler = get_srnn_gts( actions, model, test_set, data_mean,
                               data_std, dim_to_ignore, not args.omit_one_hot )
-
     # Clean and create a new h5 file of samples
     SAMPLES_FNAME = 'samples.h5'
     try:
@@ -546,6 +546,10 @@ def main():
   if args.sample:
     sample()
   else:
+    import sys
+    with open("training_out.txt", 'a+') as f:
+      f.write("============================================================\n"+str(sys.argv)+"\n")
+
     train()
 
 if __name__ == "__main__":

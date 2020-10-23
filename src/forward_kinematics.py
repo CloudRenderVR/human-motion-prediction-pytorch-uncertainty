@@ -160,8 +160,8 @@ def main():
 
   # numpy implementation
   with h5py.File( 'samples.h5', 'r' ) as h5f:
-    expmap_gt = h5f['expmap/gt/walking_0'][:]
-    expmap_pred = h5f['expmap/preds/walking_0'][:]
+    expmap_gt = h5f['expmap/gt/directions_5'][:]
+    expmap_pred = h5f['expmap/preds/directions_5'][:]
 
   nframes_gt, nframes_pred = expmap_gt.shape[0], expmap_pred.shape[0]
 
@@ -183,18 +183,18 @@ def main():
   ob = viz.Ax3DPose(ax)
 
   # Plot the conditioning ground truth
-  for i in range(nframes_gt):
+  for i in range(nframes_gt)[-25:]:
     ob.update( xyz_gt[i,:] )
     plt.show(block=False)
     fig.canvas.draw()
-    plt.pause(0.01)
+    plt.pause(0.04)
 
   # Plot the prediction
-  for i in range(nframes_pred):
-    ob.update( xyz_pred[i,:], lcolor="#9b59b6", rcolor="#2ecc71" )
+  for i in range(nframes_pred)[:10]:
+    ob.update( xyz_pred[i,:], rcolor="#f06090", lcolor="#6090b0" )
     plt.show(block=False)
     fig.canvas.draw()
-    plt.pause(0.01)
+    plt.pause(0.04)
 
 
 if __name__ == '__main__':

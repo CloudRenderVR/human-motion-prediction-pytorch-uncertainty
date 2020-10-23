@@ -10,7 +10,7 @@ for arch in ["tied", "basic"]:
                     action_string = "--learning_rate 0.005 --iterations 30000"
                 else:
                     action_string = "--learning_rate 0.05 --iterations 10000 --action "+action
-                lines.append("python src/translate.py --residual_velocities --omit_one_hot --batch_size 32 --architecture "+arch+" --seq_length_in "+inp_len+" --seq_length_out "+out_len+" "+action_string)
+                lines.append("python src/translate.py --residual_velocities --omit_one_hot --batch_size 32 --architecture "+arch+" --seq_length_in "+inp_len+" --seq_length_out "+out_len+" "+action_string+"\n")
 
 f.writelines(lines)
 f.close()
