@@ -208,9 +208,8 @@ def main():
     history = 8
     true_frames = 20
     pred_frames = 10
-
     data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
-    data = data[data.keys()[0]]
+    data = data[0][(subject, action, subaction, "even")]
 
     preds = []
     for index in range(target_frame, target_frame+pred_frames):
