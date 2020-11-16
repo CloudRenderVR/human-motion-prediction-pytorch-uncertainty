@@ -91,6 +91,56 @@ def get_both(n_samples, model, poses_in, current_frame):
 
     return (poses_out, covars)
 
+def estimate_derivatives(poses, which_derivatives, order):
+    #make sure we have enough poses
+    assert(poses.shape[0] >= which_derivatives+order)
+    #coefficients table, indexed by table[derivative][accuracy order]
+    table = np.array([[],
+                      [
+                         [0.0],
+                         [1.0, -1.0],
+                         [3.0/2.0, -2.0, 1.0/2.0],
+                         [11.0/6.0, -3.0, 3.0/2.0, -1.0/3.0],
+                         [25.0/12.0, -4.0, 3.0, -4.0/3.0, 1.0/4.0]],
+                     [
+                         [0.0, 0.0],
+                         [1.0, -2.0, 1.0],
+                         [2.0, -5.0, 4.0, -1.0],
+                         [35.0/12.0, -26.0/3.0, 19.0/2.0, -14.0/3.0, 11.0/12.0],
+                         [15.0/4.0, -77.0/6.0, 107.0/6.0, -13.0, 61.0/12.0, -5.0/6.0]],
+                     [
+                         [0.0, 0.0, 0.0],
+                         [1.0, -3.0, 3.0, -1.0],
+                         [5.0/2.0, -9.0, 12.0, -7.0, 3.0/2.0],
+                         [17.0/4.0, -71.0/4.0, 59.0/2.0, -49.0/2.0, 41.0/4.0, -7.0/4.0],
+                         [49.0/8.0, -29.0, 461.0/8.0, -62.0, 307.0/8.0, -13.0, 15.0/8.0]
+
+                     ]])
+    assert(table[which_derivatives][order])
+
+    derivs = []
+    #0'th derivative
+    derivs.append([poses[-1,:]])
+
+    #TODO, check in place here also?
+
+    for deriv in range(which_derivatives):
+        poses_slice = poses[-(deriv+order):, : ]
+        table_row = np.flip(table[deriv][order])
+
+        derivs.append(np.multiply(poses_slice, table_row))
+
+    return derivs
+
+def taylor_approximation(derivatives, steps):
+    out_poses = []
+
+    for step in range(1, steps):
+        out_pose = derivatives[0]
+        for i in range(1, len(derivatives)):
+            #TODO, check not in place:
+            out_pose = out_pose + derivatives[i] / np.math.factorial(i) * np.power(step, i)
+        out_poses.append(out_pose)
 
 #Hardcoded as a test
 if __name__ == "__main__":
