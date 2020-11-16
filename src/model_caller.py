@@ -95,27 +95,27 @@ def estimate_derivatives(poses, which_derivatives, order):
     #make sure we have enough poses
     assert(poses.shape[0] >= which_derivatives+order)
     #coefficients table, indexed by table[derivative][accuracy order]
-    table = np.array([[],
-                      [
+    table = [       [],
+                    [
                          [0.0],
                          [1.0, -1.0],
                          [3.0/2.0, -2.0, 1.0/2.0],
                          [11.0/6.0, -3.0, 3.0/2.0, -1.0/3.0],
                          [25.0/12.0, -4.0, 3.0, -4.0/3.0, 1.0/4.0]],
-                     [
+                    [
                          [0.0, 0.0],
                          [1.0, -2.0, 1.0],
                          [2.0, -5.0, 4.0, -1.0],
                          [35.0/12.0, -26.0/3.0, 19.0/2.0, -14.0/3.0, 11.0/12.0],
                          [15.0/4.0, -77.0/6.0, 107.0/6.0, -13.0, 61.0/12.0, -5.0/6.0]],
-                     [
+                    [
                          [0.0, 0.0, 0.0],
                          [1.0, -3.0, 3.0, -1.0],
                          [5.0/2.0, -9.0, 12.0, -7.0, 3.0/2.0],
                          [17.0/4.0, -71.0/4.0, 59.0/2.0, -49.0/2.0, 41.0/4.0, -7.0/4.0],
-                         [49.0/8.0, -29.0, 461.0/8.0, -62.0, 307.0/8.0, -13.0, 15.0/8.0]
+                         [49.0/8.0, -29.0, 461.0/8.0, -62.0, 307.0/8.0, -13.0, 15.0/8.0]]
 
-                     ]])
+                     ]
     assert(table[which_derivatives][order])
 
     derivs = []
@@ -126,7 +126,7 @@ def estimate_derivatives(poses, which_derivatives, order):
 
     for deriv in range(which_derivatives):
         poses_slice = poses[-(deriv+order):, : ]
-        table_row = np.flip(table[deriv][order])
+        table_row = np.flip(np.array(table[deriv][order]))
 
         derivs.append(np.multiply(poses_slice, table_row))
 
