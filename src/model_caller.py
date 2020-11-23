@@ -120,28 +120,25 @@ def estimate_derivatives(poses, which_derivatives, order):
 
     derivs = []
     #0'th derivative
-    derivs.append([poses[-1,:]])
+    derivs.append(poses[-1,:])
 
     #TODO, check in place here also?
 
-    for deriv in range(which_derivatives):
+    for deriv in range(1, which_derivatives+1):
         poses_slice = poses[-(deriv+order):, : ]
         table_row = np.flip(np.array(table[deriv][order]))
-
-        derivs.append(np.multiply(poses_slice, table_row))
-
+        derivs.append(np.matmul(poses_slice.T, table_row).T)
     return derivs
 
 def taylor_approximation(derivatives, steps):
     out_poses = []
-
-    for step in range(1, steps):
+    for step in range(1, steps+1):
         out_pose = derivatives[0]
         for i in range(1, len(derivatives)):
             #TODO, check not in place:
-            out_pose = out_pose + derivatives[i] / np.math.factorial(i) * np.power(step, i)
+            out_pose = out_pose + ( (derivatives[i] / np.math.factorial(i))  *  np.power(step, i) )
         out_poses.append(out_pose)
-
+    return np.array(out_poses)
 #Hardcoded as a test
 if __name__ == "__main__":
     filename  = "./data/h3.6m/dataset/S1/walking_1.txt"

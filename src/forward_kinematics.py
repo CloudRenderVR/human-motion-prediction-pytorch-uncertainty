@@ -201,21 +201,20 @@ def main():
         plt.pause(0.04)
   else:
     parent, offset, rotInd, expmapInd = _some_variables()
-    action = "walking"
+    action = "directions"
     subject = 1
     subaction = 1
-    target_frame = 40
+    target_frame = 190
     history = 8
-    true_frames = 20
-    pred_frames = 10
+    true_frames = 10
+    pred_frames = 5
     data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
     data = data[0][(subject, action, subaction, "even")]
 
     preds = []
-    for index in range(target_frame, target_frame+pred_frames):
-        derivs = model_caller.estimate_derivatives(data[index-history:index], 3, 4)
-        preds.append(model_caller.taylor_approximation(derivs, pred_frames))
-    preds = np.array(preds)
+    derivs = model_caller.estimate_derivatives(data[target_frame-history:target_frame], 2, 1)
+    preds = model_caller.taylor_approximation(derivs, pred_frames)
+    
     xyz_gt, xyz_pred = np.zeros((true_frames, 96)), np.zeros((pred_frames, 96))
     for i in range(true_frames):
         xyz_gt[i, :] = fkl(data[target_frame-true_frames:target_frame][i, :], parent, offset, rotInd, expmapInd)
@@ -232,14 +231,14 @@ def main():
         ob.update(xyz_gt[i, :])
         plt.show(block=False)
         fig.canvas.draw()
-        plt.pause(0.04)
+        plt.pause(0.12)
 
     # Plot the prediction
     for i in range(pred_frames):
         ob.update(xyz_pred[i, :], rcolor="#f06090", lcolor="#6090b0")
         plt.show(block=False)
         fig.canvas.draw()
-        plt.pause(0.04)
+        plt.pause(0.12)
 
 if __name__ == '__main__':
   main()
