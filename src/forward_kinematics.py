@@ -1,5 +1,6 @@
 from __future__ import division
 
+import torch
 import model_caller
 import numpy as np
 import h5py
@@ -157,48 +158,101 @@ def _some_variables():
 
 
 def main():
-  taylor = True
+  taylor = False
+  display_uncertainty = True
   if not taylor:
-    # Load all the data
-    parent, offset, rotInd, expmapInd = _some_variables()
+    if not display_uncertainty:
+        # Load all the data
+        parent, offset, rotInd, expmapInd = _some_variables()
 
-    # numpy implementation
-    with h5py.File( 'samples.h5', 'r' ) as h5f:
-        expmap_gt = h5f['expmap/gt/directions_5'][:]
-        expmap_pred = h5f['expmap/preds/directions_5'][:]
+        # numpy implementation
+        with h5py.File( 'samples.h5', 'r' ) as h5f:
+            expmap_gt = h5f['expmap/gt/directions_5'][:]
+            expmap_pred = h5f['expmap/preds/directions_5'][:]
 
-    nframes_gt, nframes_pred = expmap_gt.shape[0], expmap_pred.shape[0]
+        nframes_gt, nframes_pred = expmap_gt.shape[0], expmap_pred.shape[0]
 
-    # Put them together and revert the coordinate space
-    expmap_all = revert_coordinate_space( np.vstack((expmap_gt, expmap_pred)), np.eye(3), np.zeros(3) )
-    expmap_gt   = expmap_all[:nframes_gt,:]
-    expmap_pred = expmap_all[nframes_gt:,:]
+        # Put them together and revert the coordinate space
+        expmap_all = revert_coordinate_space( np.vstack((expmap_gt, expmap_pred)), np.eye(3), np.zeros(3) )
+        expmap_gt   = expmap_all[:nframes_gt,:]
+        expmap_pred = expmap_all[nframes_gt:,:]
 
-    # Compute 3d points for each frame
-    xyz_gt, xyz_pred = np.zeros((nframes_gt, 96)), np.zeros((nframes_pred, 96))
-    for i in range( nframes_gt ):
-        xyz_gt[i,:] = fkl( expmap_gt[i,:], parent, offset, rotInd, expmapInd )
-    for i in range( nframes_pred ):
-        xyz_pred[i,:] = fkl( expmap_pred[i,:], parent, offset, rotInd, expmapInd )
+        # Compute 3d points for each frame
+        xyz_gt, xyz_pred = np.zeros((nframes_gt, 96)), np.zeros((nframes_pred, 96))
+        for i in range( nframes_gt ):
+            xyz_gt[i,:] = fkl( expmap_gt[i,:], parent, offset, rotInd, expmapInd )
+        for i in range( nframes_pred ):
+            xyz_pred[i,:] = fkl( expmap_pred[i,:], parent, offset, rotInd, expmapInd )
 
-    # === Plot and animate ===
-    fig = plt.figure()
-    ax = plt.gca(projection='3d')
-    ob = viz.Ax3DPose(ax)
+        # === Plot and animate ===
+        fig = plt.figure()
+        ax = plt.gca(projection='3d')
+        ob = viz.Ax3DPose(ax)
 
-    # Plot the conditioning ground truth
-    for i in range(nframes_gt)[-25:]:
-        ob.update( xyz_gt[i,:] )
-        plt.show(block=False)
-        fig.canvas.draw()
-        plt.pause(0.04)
+        # Plot the conditioning ground truth
+        for i in range(nframes_gt)[-25:]:
+            ob.update( xyz_gt[i,:] )
+            plt.show(block=False)
+            fig.canvas.draw()
+            plt.pause(0.04)
 
-    # Plot the prediction
-    for i in range(nframes_pred)[:10]:
-        ob.update( xyz_pred[i,:], rcolor="#f06090", lcolor="#6090b0" )
-        plt.show(block=False)
-        fig.canvas.draw()
-        plt.pause(0.04)
+        # Plot the prediction
+        for i in range(nframes_pred)[:10]:
+            ob.update( xyz_pred[i,:], rcolor="#f06090", lcolor="#6090b0" )
+            plt.show(block=False)
+            fig.canvas.draw()
+            plt.pause(0.04)
+    else:
+        parent, offset, rotInd, expmapInd = _some_variables()
+        action = "walking"
+        subject = 1
+        subaction = 1
+        target_frame = 190
+        history = 8
+        true_frames = 25
+        pred_frames = 5
+        model_dir = "model_results/model_all_5_8000"
+        data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
+        data = data[0][(subject, action, subaction, "even")]
+
+        model = torch.load(model_dir)
+
+        poses_in = data[target_frame-true_frames:target_frame]
+        (poses, covars) = model_caller.get_both(100, model, poses_in, target_frame-1)
+
+        xyz_gt, xyz_pred = np.zeros((true_frames, 96)), np.zeros((pred_frames, 96))
+        for i in range(true_frames):
+            xyz_gt[i, :] = fkl(data[target_frame - true_frames:target_frame][i, :], parent, offset, rotInd, expmapInd)
+        for i in range(pred_frames):
+            xyz_pred[i, :] = fkl(poses[i, :], parent, offset, rotInd, expmapInd)
+
+        # === Plot and animate ===
+        fig = plt.figure()
+        ax = plt.gca(projection='3d')
+        ob = viz.Ax3DPose(ax)
+
+        # Plot the conditioning ground truth
+        for i in range(true_frames):
+            ob.update(xyz_gt[i, :])
+            plt.show(block=False)
+            fig.canvas.draw()
+            plt.pause(0.06)
+
+        # Plot the prediction
+        for i in range(pred_frames):
+            for j in range(15):
+                sample_pose = np.zeros((99))
+                for k in range(33):
+                    sample_pose[k*3:k*3+3] += np.random.multivariate_normal(poses[i, k*3:k*3+3], covars[k])
+                xyz_sample = fkl(poses[i]+sample_pose, parent, offset, rotInd, expmapInd)
+                ob.update(xyz_pred[i, :], rcolor="#ffa0c0", lcolor="#a0c0e0")
+                plt.show(block=False)
+                fig.canvas.draw()
+                plt.pause(0.03)
+            ob.update(xyz_pred[i, :], rcolor="#f06090", lcolor="#6090b0")
+            plt.show(block=False)
+            fig.canvas.draw()
+            plt.pause(0.2)
   else:
     parent, offset, rotInd, expmapInd = _some_variables()
     action = "directions"
