@@ -204,12 +204,12 @@ def main():
             plt.pause(0.04)
     else:
         parent, offset, rotInd, expmapInd = _some_variables()
-        action = "walking"
+        action = "directions"
         subject = 1
         subaction = 1
         target_frame = 190
         history = 8
-        true_frames = 25
+        true_frames = 50 
         pred_frames = 5
         model_dir = "model_results/model_all_5_8000"
         data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
@@ -218,7 +218,7 @@ def main():
         model = torch.load(model_dir)
 
         poses_in = data[target_frame-true_frames:target_frame]
-        (poses, covars) = model_caller.get_both(100, model, poses_in, target_frame-1)
+        (poses, covars) = model_caller.get_both(100, model, poses_in, true_frames-1)
 
         xyz_gt, xyz_pred = np.zeros((true_frames, 96)), np.zeros((pred_frames, 96))
         for i in range(true_frames):
@@ -243,9 +243,9 @@ def main():
             for j in range(15):
                 sample_pose = np.zeros((99))
                 for k in range(33):
-                    sample_pose[k*3:k*3+3] += np.random.multivariate_normal(poses[i, k*3:k*3+3], covars[k])
-                xyz_sample = fkl(poses[i]+sample_pose, parent, offset, rotInd, expmapInd)
-                ob.update(xyz_pred[i, :], rcolor="#ffa0c0", lcolor="#a0c0e0")
+                    sample_pose[k*3:k*3+3] += np.random.multivariate_normal(poses[i, k*3:k*3+3], covars[i, k])
+                xyz_sample = fkl(sample_pose, parent, offset, rotInd, expmapInd)
+                ob.update(xyz_sample, rcolor="#ffa0c0", lcolor="#a0c0e0")
                 plt.show(block=False)
                 fig.canvas.draw()
                 plt.pause(0.03)
