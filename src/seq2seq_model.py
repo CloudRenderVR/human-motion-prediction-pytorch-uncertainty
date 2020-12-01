@@ -102,15 +102,14 @@ class Seq2SeqModel(nn.Module):
   def forward(self, encoder_inputs, decoder_inputs):
     def loop_function(prev, i):
         return prev
-
     batchsize = encoder_inputs.shape[0]
     encoder_inputs = torch.transpose(encoder_inputs, 0, 1)
     decoder_inputs = torch.transpose(decoder_inputs, 0, 1)
 
 
     if self.finite_taylor_extrapolate:
-        derivs = model_caller.estimate_derivatives(encoder_inputs, 2, 1)
-        taylor_preds = model_caller.taylor_approximation(derivs, len(decoder_inputs))
+        derivs = model_caller.estimate_derivatives(encoder_inputs.cpu(), 2, 1)
+        taylor_preds = model_caller.taylor_approximation(derivs, len(decoder_inputs)).cuda().float()
 
     state = torch.zeros(batchsize, self.rnn_size)
 #    state2 = torch.zeros(batchsize, self.rnn_size)
@@ -127,15 +126,20 @@ class Seq2SeqModel(nn.Module):
         if use_cuda:
             state = state.cuda()
 #            state2 = state2.cuda()
-
+    if(self.finite_taylor_extrapolate):
+       state = torch.zeros(batchsize, self.rnn_size).cuda()
     outputs = []
     prev = None
     for i, inp in enumerate(decoder_inputs):
       if loop_function is not None and prev is not None:
           inp = loop_function(prev, i)
-
+      
       inp = inp.clone() #detach()
-
+      if(self.finite_taylor_extrapolate):
+          if prev is None:
+              inp = taylor_preds[i]
+          else:
+              inp = prev.clone() + taylor_preds[i]
       if self.tied:
         inp_enc = self.fc_in(F.dropout(inp, self.dropout, training=self.training))
       else:
@@ -146,10 +150,13 @@ class Seq2SeqModel(nn.Module):
 #      output = inp + self.fc1(state2)
       
 #      state = F.dropout(state, self.dropout, training=self.training)
-      output = inp + self.fc_out(F.dropout(state, self.dropout, training=self.training))
       if(self.finite_taylor_extrapolate):
-        output = output + taylor_preds[i]
-      outputs.append(output.view([1, batchsize, self.input_size]))
+        output = self.fc_out(F.dropout(state, self.dropout, training=self.training))
+        output2 = inp + output
+      else:
+        output = inp + self.fc_out(F.dropout(state, self.dropout, training=self.training))  
+        output2 = output
+      outputs.append(output2.view([1, batchsize, self.input_size]))
       if loop_function is not None:
         prev = output
 

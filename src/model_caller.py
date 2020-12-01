@@ -140,7 +140,10 @@ def taylor_approximation(derivatives, steps):
             #TODO, check not in place:
             out_pose = out_pose + ( (derivatives[i] / np.math.factorial(i))  *  np.power(step, i) )
         out_poses.append(out_pose)
-    return np.array(out_poses)
+    if torch.is_tensor(out_poses[0]):
+        return torch.stack(out_poses)
+    else:
+        return np.array(out_poses)
 #Hardcoded as a test
 if __name__ == "__main__":
     filename  = "./data/h3.6m/dataset/S1/walking_1.txt"

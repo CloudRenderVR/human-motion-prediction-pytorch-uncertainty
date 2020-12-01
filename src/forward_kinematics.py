@@ -167,8 +167,8 @@ def main():
 
         # numpy implementation
         with h5py.File( 'samples.h5', 'r' ) as h5f:
-            expmap_gt = h5f['expmap/gt/directions_5'][:]
-            expmap_pred = h5f['expmap/preds/directions_5'][:]
+            expmap_gt = h5f['expmap/gt/walking_5'][:]
+            expmap_pred = h5f['expmap/preds/walking_5'][:]
 
         nframes_gt, nframes_pred = expmap_gt.shape[0], expmap_pred.shape[0]
 
@@ -197,7 +197,7 @@ def main():
             plt.pause(0.04)
 
         # Plot the prediction
-        for i in range(nframes_pred)[:10]:
+        for i in range(nframes_pred)[:5]:
             ob.update( xyz_pred[i,:], rcolor="#f06090", lcolor="#6090b0" )
             plt.show(block=False)
             fig.canvas.draw()
@@ -211,7 +211,8 @@ def main():
         history = 8
         true_frames = 50 
         pred_frames = 5
-        model_dir = "model_results/model_all_5_8000"
+        model_dir = "model_results/model_bad_taylor_walking_5_10000"
+        #model_dir = "model_results/model_all_5_8000"
         data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
         data = data[0][(subject, action, subaction, "even")]
         

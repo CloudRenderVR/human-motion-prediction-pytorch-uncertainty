@@ -112,7 +112,7 @@ os.makedirs(train_dir, exist_ok=True)
 
 def create_model(actions, sampling=False):
   """Create translation model and initialize or load parameters in session."""
-
+  print(args.finite_taylor_extrapolate)
   model = seq2seq_model.Seq2SeqModel(
       args.architecture,
       args.seq_length_in if not sampling else 50,
@@ -127,7 +127,7 @@ def create_model(actions, sampling=False):
       len( actions ),
       not args.omit_one_hot,
       args.residual_velocities,
-      args.finite_taylor_extrapolate,
+      finite_taylor_extrapolate=args.finite_taylor_extrapolate,
       dtype=torch.float32)
 
   if args.load <= 0:
