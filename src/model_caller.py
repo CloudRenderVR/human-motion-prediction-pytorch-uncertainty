@@ -27,6 +27,7 @@ def predict(model, poses_in, current):
 
     #source_seq_len - 1 preceding frames to current frame (ex: len = 3, current = 10, gives 8, 9, leaves 10 for decoder
     encoder_inputs[:, :] = poses_in[current-model.source_seq_len+1:current, :]
+
     #Only need to feed in the current pose to start the feedback loop
     #For some reason, decoder_inputs doesn't usually do anything
     #for the future recurrent nodes unless you just feed ground truth to the network.

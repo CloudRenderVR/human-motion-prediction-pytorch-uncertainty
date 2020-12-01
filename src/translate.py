@@ -70,6 +70,9 @@ parser.add_argument('--seq_length_out', dest='seq_length_out',
 parser.add_argument('--omit_one_hot', dest='omit_one_hot',
                   help='', action='store_true',
                   default=False)
+parser.add_argument('--taylor', dest='finite_taylor_extrapolate',
+                    help='Whether to augment the network with a taylor series extrapolation from a finite difference scheme of the previous frames',
+                    default=False)
 # Directories
 parser.add_argument('--data_dir', dest='data_dir',
                   help='Data directory',
@@ -89,6 +92,7 @@ parser.add_argument('--load', dest='load',
 parser.add_argument('--sample', dest='sample',
                   help='Set to True for sampling.', action='store_true',
                   default=False)
+
 
 args = parser.parse_args()
 
@@ -123,6 +127,7 @@ def create_model(actions, sampling=False):
       len( actions ),
       not args.omit_one_hot,
       args.residual_velocities,
+      args.finite_taylor_extrapolate,
       dtype=torch.float32)
 
   if args.load <= 0:

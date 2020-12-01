@@ -18,6 +18,7 @@ from torch import nn
 import torch.nn.functional as F
 #import rnn_cell_extensions # my extensions of the tf repos
 import data_utils
+import model_caller
 
 use_cuda=True
 
@@ -39,6 +40,7 @@ class Seq2SeqModel(nn.Module):
                one_hot=True,
                residual_velocities=False,
                dropout=0.1,
+               finite_taylor_extrapolate=False,
                dtype=torch.float32):
     """Create the model.
 
@@ -77,7 +79,7 @@ class Seq2SeqModel(nn.Module):
     self.rnn_size = rnn_size
     self.batch_size = batch_size
     self.dropout = dropout
-
+    self.finite_taylor_extrapolate = finite_taylor_extrapolate
     # === Create the RNN that will keep the state ===
     print('rnn_size = {0}'.format( rnn_size ))
 
@@ -104,6 +106,11 @@ class Seq2SeqModel(nn.Module):
     batchsize = encoder_inputs.shape[0]
     encoder_inputs = torch.transpose(encoder_inputs, 0, 1)
     decoder_inputs = torch.transpose(decoder_inputs, 0, 1)
+
+
+    if self.finite_taylor_extrapolate:
+        derivs = model_caller.estimate_derivatives(encoder_inputs, 2, 1)
+        taylor_preds = model_caller.taylor_approximation(derivs, len(decoder_inputs))
 
     state = torch.zeros(batchsize, self.rnn_size)
 #    state2 = torch.zeros(batchsize, self.rnn_size)
@@ -140,7 +147,8 @@ class Seq2SeqModel(nn.Module):
       
 #      state = F.dropout(state, self.dropout, training=self.training)
       output = inp + self.fc_out(F.dropout(state, self.dropout, training=self.training))
-
+      if(self.finite_taylor_extrapolate):
+        output = output + taylor_preds[i]
       outputs.append(output.view([1, batchsize, self.input_size]))
       if loop_function is not None:
         prev = output
