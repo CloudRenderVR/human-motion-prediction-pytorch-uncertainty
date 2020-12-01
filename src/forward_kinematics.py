@@ -158,7 +158,7 @@ def _some_variables():
 
 
 def main():
-  taylor = False
+  taylor = True 
   display_uncertainty = True
   if not taylor:
     if not display_uncertainty:
@@ -263,13 +263,14 @@ def main():
             plt.pause(0.2)
   else:
     parent, offset, rotInd, expmapInd = _some_variables()
+    #directions, 1, 1, 180, 8, 10, 10 flips out
     action = "directions"
     subject = 1
     subaction = 1
-    target_frame = 190
+    target_frame = 180
     history = 8
     true_frames = 10
-    pred_frames = 5
+    pred_frames = 10
     data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
     data = data[0][(subject, action, subaction, "even")]
 
@@ -297,6 +298,12 @@ def main():
 
     # Plot the prediction
     for i in range(pred_frames):
+        if i > 0:
+            #print( [ ((xyz_pred[i, j] - xyz_pred[i-1, j]) if (xyz_pred[i, j] - xyz_pred[i-1, j] > .1) else 0) for j in range(96)]  )
+            print("#########################################")
+            print(np.argmax( (xyz_pred[i] - xyz_pred[i-1])) )
+            print(max(xyz_pred[i] - xyz_pred[i-1]))
+            print(xyz_pred[i][np.argmax( (xyz_pred[i] - xyz_pred[i-1]) )])
         ob.update(xyz_pred[i, :], rcolor="#f06090", lcolor="#6090b0")
         plt.show(block=False)
         fig.canvas.draw()
