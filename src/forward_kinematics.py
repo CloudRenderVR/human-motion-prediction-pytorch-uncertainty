@@ -206,7 +206,7 @@ def main():
         parent, offset, rotInd, expmapInd = _some_variables()
         action = "directions"
         subject = 1
-        subaction = 1
+        subaction = 2
         target_frame = 190
         history = 8
         true_frames = 50 
@@ -214,10 +214,18 @@ def main():
         model_dir = "model_results/model_all_5_8000"
         data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
         data = data[0][(subject, action, subaction, "even")]
-
+        
         model = torch.load(model_dir)
-
         poses_in = data[target_frame-true_frames:target_frame]
+       
+        ### Code to test zeroing everything except the arms, does alright (for the arms)  ###
+        #itt = 51
+        #  
+        #for i in ( [*range(itt)] ):
+        #    if abs(poses_in[0][i]) > .000001:
+        #        poses_in[:, i] = np.random.normal(0, 0.003, (poses_in.shape[0]))
+        #####################################################################################
+
         (poses, covars) = model_caller.get_both(100, model, poses_in, true_frames-1)
 
         xyz_gt, xyz_pred = np.zeros((true_frames, 96)), np.zeros((pred_frames, 96))
