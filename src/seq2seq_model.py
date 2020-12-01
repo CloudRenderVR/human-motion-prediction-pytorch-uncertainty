@@ -128,7 +128,6 @@ class Seq2SeqModel(nn.Module):
         inp = encoder_inputs[i]
         if self.tied:
           inp = self.fc_in(F.dropout(inp, self.dropout, training=self.training))
-        state = self.cell(inp, state)
 #        state2 = self.cell2(state, state2)
         state = F.dropout(state, self.dropout, training=self.training)
         if use_cuda:
@@ -153,13 +152,13 @@ class Seq2SeqModel(nn.Module):
 #      output = inp + self.fc1(state2)
       
 #      state = F.dropout(state, self.dropout, training=self.training)
-      output = inp + self.fc_out(F.dropout(state, self.dropout, training=self.training))
+      output = self.fc_out(F.dropout(state, self.dropout, training=self.training))
+      output[:, :54] += inp
       if(self.finite_taylor_extrapolate):
         output = output + taylor_preds[i]
-      outputs.append(output.view([1, batchsize, self.input_size]))
+      outputs.append(output.view([1, batchsize, self.input_size*2]))
       if loop_function is not None:
-        prev = output
-
+          prev = output[:, :54]
 #    return outputs, state
 
     outputs = torch.cat(outputs, 0)
