@@ -41,6 +41,7 @@ class Seq2SeqModel(nn.Module):
                residual_velocities=False,
                dropout=0.1,
                finite_taylor_extrapolate=False,
+               output_as_normal_distribution=True,
                dtype=torch.float32):
     """Create the model.
 
@@ -91,7 +92,8 @@ class Seq2SeqModel(nn.Module):
       self.tied = False
       self.cell = torch.nn.GRUCell(self.input_size, self.rnn_size)
 
-    self.fc_out = nn.Linear(self.rnn_size, self.input_size)
+    #2 for a sigma for each (others can be expanded to 0... maybe using the same denormalization function?)
+    self.fc_out = nn.Linear(self.rnn_size, self.input_size*2)
     if architecture == "tied":
       self.fc_in = nn.Linear(self.input_size, self.rnn_size)
       print(self.fc_out.weight.shape)
@@ -100,6 +102,11 @@ class Seq2SeqModel(nn.Module):
 
 
   def forward(self, encoder_inputs, decoder_inputs):
+    #Might fix some backwards compatability with previous pickled networks
+    try:
+      a = self.finite_taylor_extrapolate
+    except:
+      self.finite_taylor_extrapolate = False
     def loop_function(prev, i):
         return prev
 

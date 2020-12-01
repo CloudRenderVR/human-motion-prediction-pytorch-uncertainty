@@ -154,6 +154,23 @@ def clean_batch(batch):
     decoder_outputs = Variable(decoder_outputs)
     return (encoder_inputs, decoder_inputs, decoder_outputs)
 
+loss_func = "mle" #mse, me, mle (max likelihood)
+
+def get_loss(output, truth):
+    if loss_func == "mse":
+        return ( (output-truth)**2 ).mean()
+    if loss_func == "me":
+        return ( np.abs(output-truth) ).mean()
+    if loss_func == "mle":
+        assert(output.shape[-1] == truth.shape[-1] * 2)
+        means  = output[,:int(truth.shape[-1]/2)]
+        sigmas = output[,int(truth.shape[-1]/2):]
+        neg_log_likelihood = 0
+        neg_log_likelihood += truth.shape[-1]/2 * torch.log(2*3.1415926)
+        neg_log_likelihood += torch.sum(torch.log(torch.pow(sigmas, 2))) / 2.0
+        neg_log_likelihood += torch.pow( ( (means - truth) / sigmas), 2) / 2.0
+        return neg_log_likelihood
+
 def train():
   """Train a seq2seq model on human motion"""
 
@@ -197,15 +214,15 @@ def train():
       encoder_inputs, decoder_inputs, decoder_outputs = clean_batch(model.get_batch( train_set, not args.omit_one_hot ))
       preds = model(encoder_inputs, decoder_inputs)
 
-      step_loss = (preds-decoder_outputs)**2
-      step_loss = step_loss.mean()
+      step_loss = get_loss(preds, decoder_outputs)
     
       # Actual backpropagation
       step_loss.backward()
       optimiser.step()
 
       step_loss = step_loss.cpu().data.numpy()
-
+      # TODO:
+      preds = srnn_loss[, :54]
       if current_step % 100 == 0:
         print("step {0:04d}; step_loss: {1:.4f}".format(current_step, step_loss ))
 
@@ -228,12 +245,12 @@ def train():
         encoder_inputs, decoder_inputs, decoder_outputs = clean_batch(model.get_batch( test_set, not args.omit_one_hot ))
   
         preds = model(encoder_inputs, decoder_inputs)
-  
-        step_loss = (preds-decoder_outputs)**2
-        step_loss = step_loss.mean()
 
+
+        step_loss = get_loss(preds, decoder_outputs)
         val_loss = step_loss # Loss book-keeping
-
+        # TODO:
+        preds = srnn_loss[, :54]
         print()
         print("{0: <16} |".format("milliseconds"), end="")
         for ms in [80, 160, 320, 400, 560, 1000]:
@@ -250,9 +267,9 @@ def train():
           srnn_poses = model(encoder_inputs, decoder_inputs)
 
 
-          srnn_loss = (srnn_poses - decoder_outputs)**2
-          srnn_loss.cpu().data.numpy()
-          srnn_loss = srnn_loss.mean()
+          srnn_loss = get_loss(srnn_poses, decoder_outputs)
+          #TODO:
+          srnn_loss = srnn_loss[,:54]
 
           srnn_poses = srnn_poses.cpu().data.numpy()
           srnn_poses = srnn_poses.transpose([1,0,2])
