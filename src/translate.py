@@ -71,7 +71,7 @@ parser.add_argument('--omit_one_hot', dest='omit_one_hot',
                   help='', action='store_true',
                   default=False)
 parser.add_argument('--taylor', dest='finite_taylor_extrapolate',
-                    help='Whether to augment the network with a taylor series extrapolation from a finite difference scheme of the previous frames',
+                    help='Whether to augment the network with a taylor series extrapolation from a finite difference scheme of the previous frames', action='store_true',
                     default=False)
 # Directories
 parser.add_argument('--data_dir', dest='data_dir',
