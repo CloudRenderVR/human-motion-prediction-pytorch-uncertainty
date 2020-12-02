@@ -265,22 +265,21 @@ def main():
                 plt.pause(0.2)
         else:
             parent, offset, rotInd, expmapInd = _some_variables()
-            action = "walking"
+            action = "directions"
             subject = 1
-            subaction = 2
+            subaction = 1
             target_frame = 190
             history = 8
             true_frames = 50
             pred_frames = 5
-            model_dir = "model_results/model_uncertainty_walking_25_5_5000"
+            model_dir = "model_results/model_uncertainty_directions_25_5_10000"
             data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
             data = data[0][(subject, action, subaction, "even")]
 
             model = torch.load(model_dir)
             poses_in = data[target_frame - true_frames:target_frame]
 
-            (means, sigmas) = model_caller.predict(model, poses_in, true_frames - 1, use_noise=False)
-
+            means, sigmas = model_caller.predict(model, poses_in, true_frames - 1, use_noise=False)
             xyz_gt, xyz_pred = np.zeros((true_frames, 96)), np.zeros((pred_frames, 96))
             for i in range(true_frames):
                 xyz_gt[i, :] = fkl(data[target_frame - true_frames:target_frame][i, :], parent, offset, rotInd,
@@ -303,7 +302,7 @@ def main():
             # Plot the prediction
             for i in range(pred_frames):
                 for j in range(15):
-                    sample_pose = np.normal(means[i], sigmas[i])
+                    sample_pose = np.random.normal(means[i], sigmas[i])
                     xyz_sample = fkl(sample_pose, parent, offset, rotInd, expmapInd)
                     ob.update(xyz_sample, rcolor="#ffa0c0", lcolor="#a0c0e0")
                     plt.show(block=False)
