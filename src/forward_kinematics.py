@@ -204,7 +204,7 @@ def main():
             fig.canvas.draw()
             plt.pause(0.04)
     else:
-        if not use_sampling:
+        if use_sampling:
             parent, offset, rotInd, expmapInd = _some_variables()
             action = "directions"
             subject = 1
@@ -279,7 +279,7 @@ def main():
             model = torch.load(model_dir)
             poses_in = data[target_frame - true_frames:target_frame]
 
-            poses_out = model_caller.get_both(100, model, poses_in, true_frames - 1)
+            poses_out = model_caller.predict(model, poses_in, true_frames - 1, use_noise=False)
             means = poses_out[..., :54]
             sigmas = poses_out[..., 54:]
 
@@ -315,7 +315,6 @@ def main():
                 plt.show(block=False)
                 fig.canvas.draw()
                 plt.pause(0.2)
-            def predict(model, poses_in, current, use_noise=True)
   else:
     parent, offset, rotInd, expmapInd = _some_variables()
     #directions, 1, 1, 180, 8, 10, 10 flips out
