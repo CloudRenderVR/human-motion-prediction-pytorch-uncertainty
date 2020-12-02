@@ -163,12 +163,15 @@ def get_loss(output, truth):
         return ( np.abs(output-truth) ).mean()
     if loss_func == "mle":
         assert(output.shape[-1] == truth.shape[-1] * 2)
-        means  = output[:,:,:int(truth.shape[-1])]
-        sigmas = output[:,:,int(truth.shape[-1]):]
+        means  = output[..., :int(truth.shape[-1])]
+        sigmas = output[..., int(truth.shape[-1]):]
         neg_log_likelihood = 0
-        neg_log_likelihood += truth.shape[-1] * np.log(2*3.1415926)
         neg_log_likelihood += torch.sum(torch.log(torch.pow(sigmas, 2))) / 2.0
-        neg_log_likelihood += torch.sum(torch.pow( ( (means - truth) / sigmas), 2) / 2.0)
+
+        p1 = (means - truth)
+        p2 = p1 / sigmas
+        p3 = torch.pow(p2, 2)
+        neg_log_likelihood += torch.sum(p3) / 2.0
         return neg_log_likelihood
 
 def train():
@@ -269,8 +272,8 @@ def train():
 
           srnn_loss = get_loss(srnn_poses, decoder_outputs)
           #TODO:
-          srnn_poses = srnn_poses[:,:54]
-
+          srnn_poses = srnn_poses[...,:54]
+          
           srnn_poses = srnn_poses.cpu().data.numpy()
           srnn_poses = srnn_poses.transpose([1,0,2])
 
