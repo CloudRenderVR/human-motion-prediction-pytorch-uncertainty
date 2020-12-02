@@ -52,7 +52,7 @@ def predict(model, poses_in, current, use_noise = True):
     #probably the slow step with so many samples honestly... try gpu or batch?
     out = out.cpu().data.numpy()
 
-    if (model.output_as_normal_distribution):
+    if not model.output_as_normal_distribution:
         out = out.transpose([1,0,2])
 
         out_reverted = data_utils.revert_output_format(out, data_mean, data_std, dim_to_ignore, [], False)
