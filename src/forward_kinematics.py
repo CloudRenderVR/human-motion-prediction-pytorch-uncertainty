@@ -158,8 +158,9 @@ def _some_variables():
 
 
 def main():
-  taylor = True 
+  taylor = False
   display_uncertainty = True
+  use_sampling = False
   if not taylor:
     if not display_uncertainty:
         # Load all the data
@@ -203,64 +204,118 @@ def main():
             fig.canvas.draw()
             plt.pause(0.04)
     else:
-        parent, offset, rotInd, expmapInd = _some_variables()
-        action = "directions"
-        subject = 1
-        subaction = 2
-        target_frame = 190
-        history = 8
-        true_frames = 50 
-        pred_frames = 5
-        model_dir = "model_results/model_all_5_8000"
-        data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
-        data = data[0][(subject, action, subaction, "even")]
-        
-        model = torch.load(model_dir)
-        poses_in = data[target_frame-true_frames:target_frame]
-       
-        ### Code to test zeroing everything except the arms, does alright (for the arms)  ###
-        #itt = 51
-        #  
-        #for i in ( [*range(itt)] ):
-        #    if abs(poses_in[0][i]) > .000001:
-        #        poses_in[:, i] = np.random.normal(0, 0.003, (poses_in.shape[0]))
-        #####################################################################################
+        if not use_sampling:
+            parent, offset, rotInd, expmapInd = _some_variables()
+            action = "directions"
+            subject = 1
+            subaction = 2
+            target_frame = 190
+            history = 8
+            true_frames = 50
+            pred_frames = 5
+            model_dir = "model_results/model_all_5_8000"
+            data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
+            data = data[0][(subject, action, subaction, "even")]
 
-        (poses, covars) = model_caller.get_both(100, model, poses_in, true_frames-1)
+            model = torch.load(model_dir)
+            poses_in = data[target_frame-true_frames:target_frame]
 
-        xyz_gt, xyz_pred = np.zeros((true_frames, 96)), np.zeros((pred_frames, 96))
-        for i in range(true_frames):
-            xyz_gt[i, :] = fkl(data[target_frame - true_frames:target_frame][i, :], parent, offset, rotInd, expmapInd)
-        for i in range(pred_frames):
-            xyz_pred[i, :] = fkl(poses[i, :], parent, offset, rotInd, expmapInd)
+            ### Code to test zeroing everything except the arms, does alright (for the arms)  ###
+            #itt = 51
+            #
+            #for i in ( [*range(itt)] ):
+            #    if abs(poses_in[0][i]) > .000001:
+            #        poses_in[:, i] = np.random.normal(0, 0.003, (poses_in.shape[0]))
+            #####################################################################################
 
-        # === Plot and animate ===
-        fig = plt.figure()
-        ax = plt.gca(projection='3d')
-        ob = viz.Ax3DPose(ax)
+            (poses, covars) = model_caller.get_both(100, model, poses_in, true_frames-1)
 
-        # Plot the conditioning ground truth
-        for i in range(true_frames):
-            ob.update(xyz_gt[i, :])
-            plt.show(block=False)
-            fig.canvas.draw()
-            plt.pause(0.06)
+            xyz_gt, xyz_pred = np.zeros((true_frames, 96)), np.zeros((pred_frames, 96))
+            for i in range(true_frames):
+                xyz_gt[i, :] = fkl(data[target_frame - true_frames:target_frame][i, :], parent, offset, rotInd, expmapInd)
+            for i in range(pred_frames):
+                xyz_pred[i, :] = fkl(poses[i, :], parent, offset, rotInd, expmapInd)
 
-        # Plot the prediction
-        for i in range(pred_frames):
-            for j in range(15):
-                sample_pose = np.zeros((99))
-                for k in range(33):
-                    sample_pose[k*3:k*3+3] += np.random.multivariate_normal(poses[i, k*3:k*3+3], covars[i, k])
-                xyz_sample = fkl(sample_pose, parent, offset, rotInd, expmapInd)
-                ob.update(xyz_sample, rcolor="#ffa0c0", lcolor="#a0c0e0")
+            # === Plot and animate ===
+            fig = plt.figure()
+            ax = plt.gca(projection='3d')
+            ob = viz.Ax3DPose(ax)
+
+            # Plot the conditioning ground truth
+            for i in range(true_frames):
+                ob.update(xyz_gt[i, :])
                 plt.show(block=False)
                 fig.canvas.draw()
-                plt.pause(0.03)
-            ob.update(xyz_pred[i, :], rcolor="#f06090", lcolor="#6090b0")
-            plt.show(block=False)
-            fig.canvas.draw()
-            plt.pause(0.2)
+                plt.pause(0.06)
+
+            # Plot the prediction
+            for i in range(pred_frames):
+                for j in range(15):
+                    sample_pose = np.zeros((99))
+                    for k in range(33):
+                        sample_pose[k*3:k*3+3] += np.random.multivariate_normal(poses[i, k*3:k*3+3], covars[i, k])
+                    xyz_sample = fkl(sample_pose, parent, offset, rotInd, expmapInd)
+                    ob.update(xyz_sample, rcolor="#ffa0c0", lcolor="#a0c0e0")
+                    plt.show(block=False)
+                    fig.canvas.draw()
+                    plt.pause(0.03)
+                ob.update(xyz_pred[i, :], rcolor="#f06090", lcolor="#6090b0")
+                plt.show(block=False)
+                fig.canvas.draw()
+                plt.pause(0.2)
+        else:
+            parent, offset, rotInd, expmapInd = _some_variables()
+            action = "walking"
+            subject = 1
+            subaction = 2
+            target_frame = 190
+            history = 8
+            true_frames = 50
+            pred_frames = 5
+            model_dir = "model_results/model_uncertainty_walking_25_5_5000"
+            data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
+            data = data[0][(subject, action, subaction, "even")]
+
+            model = torch.load(model_dir)
+            poses_in = data[target_frame - true_frames:target_frame]
+
+            poses_out = model_caller.get_both(100, model, poses_in, true_frames - 1)
+            means = poses_out[..., :54]
+            sigmas = poses_out[..., 54:]
+
+            xyz_gt, xyz_pred = np.zeros((true_frames, 96)), np.zeros((pred_frames, 96))
+            for i in range(true_frames):
+                xyz_gt[i, :] = fkl(data[target_frame - true_frames:target_frame][i, :], parent, offset, rotInd,
+                                   expmapInd)
+            for i in range(pred_frames):
+                xyz_pred[i, :] = fkl(means[i, :], parent, offset, rotInd, expmapInd)
+
+            # === Plot and animate ===
+            fig = plt.figure()
+            ax = plt.gca(projection='3d')
+            ob = viz.Ax3DPose(ax)
+
+            # Plot the conditioning ground truth
+            for i in range(true_frames):
+                ob.update(xyz_gt[i, :])
+                plt.show(block=False)
+                fig.canvas.draw()
+                plt.pause(0.06)
+
+            # Plot the prediction
+            for i in range(pred_frames):
+                for j in range(15):
+                    sample_pose = np.normal(means[i], sigmas[i])
+                    xyz_sample = fkl(sample_pose, parent, offset, rotInd, expmapInd)
+                    ob.update(xyz_sample, rcolor="#ffa0c0", lcolor="#a0c0e0")
+                    plt.show(block=False)
+                    fig.canvas.draw()
+                    plt.pause(0.03)
+                ob.update(xyz_pred[i, :], rcolor="#f06090", lcolor="#6090b0")
+                plt.show(block=False)
+                fig.canvas.draw()
+                plt.pause(0.2)
+            def predict(model, poses_in, current, use_noise=True)
   else:
     parent, offset, rotInd, expmapInd = _some_variables()
     #directions, 1, 1, 180, 8, 10, 10 flips out

@@ -3,7 +3,7 @@ import torch
 import data_utils
 import numpy as np
 
-def predict(model, poses_in, current):
+def predict(model, poses_in, current, use_noise = True):
     """Use a saved model on the sequence of input poses.
     Args
         model: the saved pytorch model
@@ -39,8 +39,9 @@ def predict(model, poses_in, current):
     encoder_inputs = torch.unsqueeze(encoder_inputs, 0)
     decoder_inputs = torch.unsqueeze(decoder_inputs, 0)
 
-    encoder_inputs += torch.normal(0.0, 0.2, encoder_inputs.shape)
-    decoder_inputs += torch.normal(0.0, 0.2, decoder_inputs.shape)
+    if use_noise:
+        encoder_inputs += torch.normal(0.0, 0.2, encoder_inputs.shape)
+        decoder_inputs += torch.normal(0.0, 0.2, decoder_inputs.shape)
     
     encoder_inputs = encoder_inputs.cuda()
     decoder_inputs = decoder_inputs.cuda()
