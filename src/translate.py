@@ -165,13 +165,24 @@ def get_loss(output, truth):
         assert(output.shape[-1] == truth.shape[-1] * 2)
         means  = output[..., :int(truth.shape[-1])]
         sigmas = output[..., int(truth.shape[-1]):]
-        neg_log_likelihood = 0
-        neg_log_likelihood += torch.sum(torch.log(torch.pow(sigmas, 2))) / 2.0
+        #print("################################")
+        neg_log_likelihood = torch.sum(torch.log(torch.pow(sigmas, 2))) / 2.0
 
         p1 = (means - truth)
         p2 = p1 / sigmas
         p3 = torch.pow(p2, 2)
+        #print("Sigma likelihood cont:", neg_log_likelihood)
+        neg_log_likelihood += torch.numel(means) / 2.0 * np.log(2.0*3.1415926)
         neg_log_likelihood += torch.sum(p3) / 2.0
+        #print("Max Means:", torch.max(means))
+        #print("Min Sigmas:", torch.min(sigmas))
+        #print("p1 max:", torch.max(torch.abs(p1)))
+        #print("p1 avg:", torch.mean(torch.abs(p1)))
+        #print("p2 max:", torch.max(torch.abs(p2)))
+        #print("p3 max:", torch.max(p3))
+        #print("p3 min:", torch.min(p3))
+        #print("p3 avg:", torch.mean(p3))
+        #print("likelihood:", neg_log_likelihood)
         return neg_log_likelihood
 
 def train():
@@ -248,8 +259,7 @@ def train():
         encoder_inputs, decoder_inputs, decoder_outputs = clean_batch(model.get_batch( test_set, not args.omit_one_hot ))
   
         preds = model(encoder_inputs, decoder_inputs)
-
-        mse_loss = torch.sum( (preds - decoder_outputs)**2)
+        mse_loss = torch.mean( (preds[..., :54] - decoder_outputs)**2)
         step_loss = get_loss(preds, decoder_outputs)
         val_loss = step_loss # Loss book-keeping
         # TODO:
