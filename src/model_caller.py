@@ -47,15 +47,30 @@ def predict(model, poses_in, current, use_noise = True):
     decoder_inputs = decoder_inputs.cuda()
 
     out = model(encoder_inputs, decoder_inputs)
-    
-    #probably the slow step honestly... try gpu or batch?
+
+
+    #probably the slow step with so many samples honestly... try gpu or batch?
     out = out.cpu().data.numpy()
-    out = out.transpose([1,0,2])
 
-    out_reverted = data_utils.revert_output_format(out, data_mean, data_std, dim_to_ignore, [], False)
-    #Looks like this is built to handle batches too...
-    return out_reverted[0]
+    if (model.output_as_normal_distribution):
+        out = out.transpose([1,0,2])
 
+        out_reverted = data_utils.revert_output_format(out, data_mean, data_std, dim_to_ignore, [], False)
+        #Looks like this is built to handle batches too...
+
+        return out_reverted[0]
+    else:
+        means  = out[..., :54]
+        sigmas = out[..., 54:]
+
+        means  =  means.transpose([1,0,2])
+        sigmas = sigmas.transpose([1,0,2])
+
+        means_reverted  = data_utils.revert_output_format(means,  data_mean, data_std, dim_to_ignore, [], False)
+
+        #If I'm correct this will basically just multiply the standard deviations by the scale of the data (represented by it's standard deviation for some reason?), which seems correct to me
+        sigmas_reverted = data_utils.revert_output_format(sigmas, np.zeros(data_mean.shape), data_std, dim_to_ignore, [], False)
+        return (means_reverted, sigmas_reverted)
 
 def get_covars(poses):
     """Get the covariance matrices from the samples of the network output.

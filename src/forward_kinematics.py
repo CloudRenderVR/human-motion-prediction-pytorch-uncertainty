@@ -279,9 +279,7 @@ def main():
             model = torch.load(model_dir)
             poses_in = data[target_frame - true_frames:target_frame]
 
-            poses_out = model_caller.predict(model, poses_in, true_frames - 1, use_noise=False)
-            means = poses_out[..., :54]
-            sigmas = poses_out[..., 54:]
+            (means, sigmas) = model_caller.predict(model, poses_in, true_frames - 1, use_noise=False)
 
             xyz_gt, xyz_pred = np.zeros((true_frames, 96)), np.zeros((pred_frames, 96))
             for i in range(true_frames):
