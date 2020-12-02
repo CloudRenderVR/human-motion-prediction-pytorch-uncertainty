@@ -81,6 +81,7 @@ class Seq2SeqModel(nn.Module):
     self.batch_size = batch_size
     self.dropout = dropout
     self.finite_taylor_extrapolate = finite_taylor_extrapolate
+    self.output_as_normal_distribution = output_as_normal_distribution
     # === Create the RNN that will keep the state ===
     print('rnn_size = {0}'.format( rnn_size ))
 
@@ -98,7 +99,6 @@ class Seq2SeqModel(nn.Module):
       self.fc_in = nn.Linear(self.input_size, self.rnn_size)
       print(self.fc_out.weight.shape)
       self.fc_in.weight = torch.nn.Parameter(self.fc_out.weight.transpose(0, 1))
-
 
 
   def forward(self, encoder_inputs, decoder_inputs):
@@ -153,12 +153,15 @@ class Seq2SeqModel(nn.Module):
       
 #      state = F.dropout(state, self.dropout, training=self.training)
       output = self.fc_out(F.dropout(state, self.dropout, training=self.training))
-      output[:, :54] += inp
+      output[..., :54] += inp
+      if(self.output_as_normal_distribution):
+        nn.ELU(output[..., 54:], inplace=True)
+        output[..., 54:] += 1.0
       if(self.finite_taylor_extrapolate):
         output = output + taylor_preds[i]
-      outputs.append(output.view([1, batchsize, self.input_size*2]))
+      outputs.append(output.view([1, batchsize, self.input_size*(2 if self.output_as_normal_distribution else 1)]))
       if loop_function is not None:
-          prev = output[:, :54]
+          prev = output[..., :54]
 #    return outputs, state
 
     outputs = torch.cat(outputs, 0)

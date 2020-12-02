@@ -225,7 +225,7 @@ def train():
 
       step_loss = step_loss.cpu().data.numpy()
       # TODO:
-      preds = preds[:, :54]
+      preds = preds[..., :54]
       if current_step % 100 == 0:
         print("step {0:04d}; step_loss: {1:.4f}".format(current_step, step_loss ))
 
@@ -249,11 +249,11 @@ def train():
   
         preds = model(encoder_inputs, decoder_inputs)
 
-
+        mse_loss = torch.sum( (preds - decoder_outputs)**2)
         step_loss = get_loss(preds, decoder_outputs)
         val_loss = step_loss # Loss book-keeping
         # TODO:
-        preds = preds[:, :54]
+        preds = preds[..., :54]
         print()
         print("{0: <16} |".format("milliseconds"), end="")
         for ms in [80, 160, 320, 400, 560, 1000]:
@@ -336,9 +336,10 @@ def train():
               "--------------------------\n"
               "Val loss:            %.4f\n"
               "srnn loss:           %.4f\n"
+              "MSE loss:            %.4f\n"
               "============================" % (current_step,
               args.learning_rate, step_time*1000, loss,
-              val_loss, srnn_loss))
+              val_loss, srnn_loss, mse_loss))
         with open("training_out.txt", 'a+') as f:
             f.write(action + " " + str(current_step)+": "+str(val_loss)+"\n")
         torch.save(model, train_dir + '/model_' + str(current_step))
