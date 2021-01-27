@@ -98,16 +98,20 @@ def get_both(n_samples, model, poses_in, current_frame):
          will be taken from the saved model.
         covars: Covariance matrices. Dimensions (target_sequence_length, 33, 3, 3)
     """
-    pose_samples = np.zeros((n_samples, model.target_seq_len, 99), float)
-
-    for i in range(n_samples):
-        pose_samples[i, :, :] = predict(model, poses_in, current_frame)
 
 
-    poses_out = np.mean(pose_samples, 0)
-    covars = get_covars(pose_samples)
 
-    return (poses_out, covars)
+    #If model is a sampling model:
+    #   pose_samples = np.zeros((n_samples, model.target_seq_len, 99), float)
+    #   for i in range(n_samples):
+    #       pose_samples[i, :, :] = predict(model, poses_in, current_frame)
+    #   poses_out = np.mean(pose_samples, 0)
+    #   covars = get_covars(pose_samples)
+
+    #   return (poses_out, covars)
+    #else:
+    prediction = predict(model, poses_in, current_frame)
+    return prediction
 
 def estimate_derivatives(poses, which_derivatives, order):
     #make sure we have enough poses
@@ -160,8 +164,9 @@ def taylor_approximation(derivatives, steps):
 #Hardcoded as a test
 if __name__ == "__main__":
     filename  = "./data/h3.6m/dataset/S1/walking_1.txt"
-    model_location = "model_testing"
+    model_location = "model_results/walking_10_mle"
     action_sequence = data_utils.readCSVasFloat(filename)
     model = torch.load(model_location)
     prediction = get_both(5, model, action_sequence, 70)
+    print(prediction)
     pass
