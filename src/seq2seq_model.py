@@ -94,7 +94,7 @@ class Seq2SeqModel(nn.Module):
       self.cell = torch.nn.GRUCell(self.input_size, self.rnn_size)
 
     #2 for a sigma for each (others can be expanded to 0... maybe using the same denormalization function?)
-    self.fc_out = nn.Linear(self.rnn_size, self.input_size*2)
+    self.fc_out = nn.Linear(self.rnn_size, self.input_size*(2 if output_as_normal_distribution else 1))
     if architecture == "tied":
       self.fc_in = nn.Linear(self.input_size, self.rnn_size)
       print(self.fc_out.weight.shape)

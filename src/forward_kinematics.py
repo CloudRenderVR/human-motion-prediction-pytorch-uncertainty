@@ -208,12 +208,12 @@ def main():
             parent, offset, rotInd, expmapInd = _some_variables()
             action = "directions"
             subject = 1
-            subaction = 2
+            subaction = 1
             target_frame = 190
             history = 8
             true_frames = 50
-            pred_frames = 5
-            model_dir = "model_results/model_all_5_8000"
+            pred_frames = 10
+            model_dir = "presentation_models/sampling_directions"
             data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
             data = data[0][(subject, action, subaction, "even")]
 
@@ -246,11 +246,11 @@ def main():
                 ob.update(xyz_gt[i, :])
                 plt.show(block=False)
                 fig.canvas.draw()
-                plt.pause(0.06)
+                plt.pause(0.12)
 
             # Plot the prediction
             for i in range(pred_frames):
-                for j in range(15):
+                for j in range(0):
                     sample_pose = np.zeros((99))
                     for k in range(33):
                         sample_pose[k*3:k*3+3] += np.random.multivariate_normal(poses[i, k*3:k*3+3], covars[i, k])
@@ -262,17 +262,17 @@ def main():
                 ob.update(xyz_pred[i, :], rcolor="#f06090", lcolor="#6090b0")
                 plt.show(block=False)
                 fig.canvas.draw()
-                plt.pause(0.2)
+                plt.pause(0.12)
         else:
             parent, offset, rotInd, expmapInd = _some_variables()
-            action = "directions"
+            action = "eating"
             subject = 1
             subaction = 1
             target_frame = 190
             history = 8
             true_frames = 50
-            pred_frames = 5
-            model_dir = "model_results/model_uncertainty_directions_25_5_10000"
+            pred_frames = 10
+            model_dir = "model_results/eating_10_mle"
             data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
             data = data[0][(subject, action, subaction, "even")]
 
@@ -297,11 +297,11 @@ def main():
                 ob.update(xyz_gt[i, :])
                 plt.show(block=False)
                 fig.canvas.draw()
-                plt.pause(0.06)
+                plt.pause(0.12)
 
             # Plot the prediction
             for i in range(pred_frames):
-                for j in range(15):
+                for j in range(0):
                     sample_pose = np.random.normal(means[i], sigmas[i])
                     xyz_sample = fkl(sample_pose, parent, offset, rotInd, expmapInd)
                     ob.update(xyz_sample, rcolor="#ffa0c0", lcolor="#a0c0e0")
@@ -311,14 +311,14 @@ def main():
                 ob.update(xyz_pred[i, :], rcolor="#f06090", lcolor="#6090b0")
                 plt.show(block=False)
                 fig.canvas.draw()
-                plt.pause(0.2)
+                plt.pause(0.12)
   else:
     parent, offset, rotInd, expmapInd = _some_variables()
     #directions, 1, 1, 180, 8, 10, 10 flips out
     action = "directions"
     subject = 1
     subaction = 1
-    target_frame = 180
+    target_frame = 190
     history = 8
     true_frames = 10
     pred_frames = 10

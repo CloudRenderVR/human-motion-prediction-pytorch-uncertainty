@@ -237,8 +237,8 @@ def train():
       step_loss = step_loss.cpu().data.numpy()
       # TODO:
       preds = preds[..., :54]
-      if current_step % 100 == 0:
-        print("step {0:04d}; step_loss: {1:.4f}".format(current_step, step_loss ))
+      #if current_step % 100 == 0:
+      #  print("step {0:04d}; step_loss: {1:.4f}".format(current_step, step_loss ))
 
       step_time += (time.time() - start_time) / args.test_every
       loss += step_loss / args.test_every
@@ -408,7 +408,7 @@ def get_srnn_gts( actions, model, test_set, data_mean, data_std, dim_to_ignore, 
 
 def sample():
   """Sample predictions for srnn's seeds"""
-  actions = define_actions( "all")#args.action )
+  actions = define_actions( args.action )
 
   if True:
     # === Create the model ===
@@ -455,7 +455,7 @@ def sample():
 
       srnn_poses = model(encoder_inputs, decoder_inputs)
 
-      srnn_loss = (srnn_poses - decoder_outputs)**2
+      srnn_loss = (srnn_poses[..., :54] - decoder_outputs)**2
       srnn_loss.cpu().data.numpy()
       srnn_loss = srnn_loss.mean()
 
@@ -464,7 +464,7 @@ def sample():
 
       srnn_loss = srnn_loss.cpu().data.numpy()
       # denormalizes too
-      srnn_pred_expmap = data_utils.revert_output_format(srnn_poses, data_mean, data_std, dim_to_ignore, actions, not args.omit_one_hot )
+      srnn_pred_expmap = data_utils.revert_output_format(srnn_poses[..., :54], data_mean, data_std, dim_to_ignore, actions, not args.omit_one_hot )
 
       # Save the samples
       with h5py.File( SAMPLES_FNAME, 'a' ) as hf:
