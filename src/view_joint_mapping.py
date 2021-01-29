@@ -21,7 +21,7 @@ def main():
 
     # directions, 1, 1, 180, 8, 10, 10 flips out
 
-    angles_to_wiggle = range(5)
+    angles_to_wiggle = range(1, 99, 3)
 
     # === Plot and animate ===
     fig = plt.figure()
@@ -32,11 +32,19 @@ def main():
     for i in angles_to_wiggle:
         print("Wiggling",i,"...")
         time = 0
-        pose = np.zeros((99))
-        while time < 7:
-            pose[i] = np.sin(time)
+        pose = np.zeros((99)) * -.15
+        for j in range(99):
+            #if j%3 == 0 and j > 5:
+            #    pose[j] = 1.57
+            pass
+            #pose[j] += j*.003
+        pose[77] = -1.57
+        pose[53] = 1.57
+        pose[80] = -1.57
+        while time < 25:
+            pose[i] = 1.5*np.abs(np.sin(time))
             xyz = forward_kinematics.fkl(pose, parent, offset, rotInd, expmapInd)
-            time += 0.15
+            time += 0.25
 
             ob.update(xyz, rcolor="#f06090", lcolor="#6090b0")
             plt.show(block=False)
