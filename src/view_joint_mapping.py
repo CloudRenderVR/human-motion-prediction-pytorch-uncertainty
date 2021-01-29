@@ -30,12 +30,13 @@ def main():
 
     # Plot the prediction
     for i in angles_to_wiggle:
+        print("Wiggling",i,"...")
         time = 0
         pose = np.zeros((99))
         while time < 7:
             pose[i] = np.sin(time)
             xyz = forward_kinematics.fkl(pose, parent, offset, rotInd, expmapInd)
-            time += 0.05
+            time += 0.15
 
             ob.update(xyz, rcolor="#f06090", lcolor="#6090b0")
             plt.show(block=False)
