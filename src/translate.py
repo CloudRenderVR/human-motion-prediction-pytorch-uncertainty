@@ -154,14 +154,14 @@ def clean_batch(batch):
     decoder_outputs = Variable(decoder_outputs)
     return (encoder_inputs, decoder_inputs, decoder_outputs)
 
-loss_func = "mle" #mse, me, mle (max likelihood)
 
+import flags
 def get_loss(output, truth):
-    if loss_func == "mse":
+    if flags.translate_loss_func == "mse":
         return ( (output-truth)**2 ).mean()
-    if loss_func == "me":
+    if flags.translate_loss_func == "me":
         return ( np.abs(output-truth) ).mean()
-    if loss_func == "mle":
+    if flags.translate_loss_func == "mle":
         assert(output.shape[-1] == truth.shape[-1] * 2)
         means  = output[..., :int(truth.shape[-1])]
         sigmas = output[..., int(truth.shape[-1]):]

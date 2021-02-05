@@ -324,13 +324,21 @@ def main():
                 plt.pause(0.3)
                 drawer.clear()
 
+            import translate
+            flags.translate_loss_func = "mle"
             ### Plot the predictions and samples ### ==================================
             for i in range(pred_frames):
                 lines = []
                 colors = []
                 #sample a bunch and draw those
+                print("#########################")
                 for j in range(16):
                     sample_pose = np.random.normal(means[i], sigmas[i])
+
+                    #get likelihood (truth needs concat on last dimension), color accordingly
+                    likelihood = -translate.get_loss(sample_pose, np.concatenate(means, sigmas, len(means.shape)-1))
+                    print(likelihood)
+
                     xyz_sample = fkl(sample_pose, parent, offset, rotInd, expmapInd)
                     lines  += get_lines(xyz_sample)
                     colors += [(1, .8, .8) if lr else (.8, .8, 1) for lr in LR]
