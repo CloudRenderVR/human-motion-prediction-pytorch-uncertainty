@@ -192,6 +192,7 @@ def train():
 
   number_of_actions = len( actions )
 
+  #these will all be expangles
   train_set, test_set, data_mean, data_std, dim_to_ignore, dim_to_use = read_all_data(
     actions, args.seq_length_in, args.seq_length_out, args.data_dir, not args.omit_one_hot )
 
@@ -365,7 +366,7 @@ def train():
 
 def get_srnn_gts( actions, model, test_set, data_mean, data_std, dim_to_ignore, one_hot, to_euler=True ):
   """
-  Get the ground truths for srnn's sequences, and convert to Euler angles.
+  Get the ground truths for srnn's sequences, and convert to Euler angles (by default).
   (the error is always computed in Euler angles).
 
   Args
@@ -439,7 +440,7 @@ def sample():
     # Predict and save for each action
     for action in actions:
 
-      # Make prediction with srnn' seeds
+      # Make prediction with srnn' seeds. These will just be in expangles.
       encoder_inputs, decoder_inputs, decoder_outputs = model.get_batch_srnn( test_set, action )
 
       encoder_inputs = torch.from_numpy(encoder_inputs).float()
@@ -540,7 +541,9 @@ def define_actions( action ):
 
 def read_all_data( actions, seq_length_in, seq_length_out, data_dir, one_hot ):
   """
-  Loads data for training/testing and normalizes it.
+  Loads data for training/testing and normalizes it ALSO REMOVING UNUSED DIMENSIONS AS DEFINED IN
+  normalization_stats()!
+  Does nothing to rotation format.
 
   Args
     actions: list of strings (actions) to load
@@ -566,6 +569,9 @@ def read_all_data( actions, seq_length_in, seq_length_out, data_dir, one_hot ):
 
   train_set, complete_train = data_utils.load_data( data_dir, train_subject_ids, actions, one_hot )
   test_set,  complete_test  = data_utils.load_data( data_dir, test_subject_ids,  actions, one_hot )
+
+  #Convert to euler angles here I guess?
+
 
   # Compute normalization stats
   data_mean, data_std, dim_to_ignore, dim_to_use = data_utils.normalization_stats(complete_train)

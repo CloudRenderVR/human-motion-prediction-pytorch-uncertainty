@@ -243,6 +243,8 @@ class Seq2SeqModel(nn.Module):
   def get_batch_srnn(self, data, action ):
     """
     Get a random batch of data from the specified bucket, prepare for step.
+    Just selects indices, does not transform or normalize, meaning it returns
+    the expmap rotation format (which I believe is just the format of the data).
 
     Args
       data: dictionary with k:v, k=((subject, action, subsequence, 'even')),
@@ -250,6 +252,7 @@ class Seq2SeqModel(nn.Module):
       action: the action to load data from
     Returns
       The tuple (encoder_inputs, decoder_inputs, decoder_outputs);
+
       the constructed batches have the proper format to call step(...) later.
     """
 

@@ -126,6 +126,9 @@ def expmap2rotmat(r):
 def unNormalizeData(normalizedData, data_mean, data_std, dimensions_to_ignore, actions, one_hot ):
   """Borrowed from SRNN code. Reads a csv file and returns a float32 matrix.
   https://github.com/asheshjain399/RNNexp/blob/srnn/structural_rnn/CRFProblems/H3.6m/generateMotionData.py#L12
+  Still doesn't do anything to the rotation format. Does expand the vector back out to full size, using
+  dimensions_to_ignore.
+
 
   Args
     normalizedData: nxd matrix with normalized data
@@ -268,7 +271,8 @@ def load_data(path_to_dataset, subjects, actions, one_hot):
 def normalize_data( data, data_mean, data_std, dim_to_use, actions, one_hot ):
   """
   Normalize input data by removing unused dimensions, subtracting the mean and
-  dividing by the standard deviation
+  dividing by the standard deviation. ALSO MASKS THE UNUSED DIMENSIONS IN THE
+  DATASET BY USING DIM_TO_USE!!!!! No rotation type conversion though.
 
   Args
     data: nx99 matrix with data to normalize

@@ -67,7 +67,7 @@ def fkl( angles, parent, offset, rotInd, expmapInd ):
 
 def revert_coordinate_space(channels, R0, T0):
   """
-  Bring a series of poses to a canonical form so they are facing the camera when they start.
+  Bring a series of poses to a canonical form so they are facing the camera when they start. in/out both expmap.
   Adapted from
   https://github.com/asheshjain399/RNNexp/blob/7fc5a53292dc0f232867beb66c3a9ef845d705cb/structural_rnn/CRFProblems/H3.6m/dataParser/Utils/revertCoordinateSpace.m
 
