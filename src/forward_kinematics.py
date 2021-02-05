@@ -156,13 +156,10 @@ def _some_variables():
 
   return parent, offset, rotInd, expmapInd
 
-
+import flags
 def main():
-  taylor = False
-  display_uncertainty = True
-  use_sampling = False
-  if not taylor:
-    if not display_uncertainty:
+  if not flags.fk_taylor:
+    if not flags.fk_display_uncertainty:
         # Load all the data
         parent, offset, rotInd, expmapInd = _some_variables()
 
@@ -204,7 +201,7 @@ def main():
             fig.canvas.draw()
             plt.pause(0.04)
     else:
-        if use_sampling:
+        if flags.fk_use_sampling:
             parent, offset, rotInd, expmapInd = _some_variables()
             action = "directions"
             subject = 1
@@ -264,6 +261,7 @@ def main():
                 fig.canvas.draw()
                 plt.pause(0.12)
         else:
+            #define what we're predicting and displaying
             parent, offset, rotInd, expmapInd = _some_variables()
             action = "eating"
             subject = 1
@@ -276,6 +274,8 @@ def main():
             data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
             data = data[0][(subject, action, subaction, "even")]
 
+
+            ### LOAD MODEL AND PREDICT ### =============================================
             model = torch.load(model_dir)
             poses_in = data[target_frame - true_frames:target_frame]
 
@@ -287,31 +287,59 @@ def main():
             for i in range(pred_frames):
                 xyz_pred[i, :] = fkl(means[i, :], parent, offset, rotInd, expmapInd)
 
-            # === Plot and animate ===
+
+            ### SOME SETUP FOR PLOTTING ### ============================================
             fig = plt.figure()
             ax = plt.gca(projection='3d')
-            ob = viz.Ax3DPose(ax)
 
-            # Plot the conditioning ground truth
+            # Left / right indicator
+            LR = np.array([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1], dtype=bool)
+
+            import test_pyplot
+            drawer = test_pyplot.AnActuallySaneWayOfDrawingThings(ax, -3, -3, -3, 3, 3, 3)
+
+            # Helper which extracts lines from an xyz returned from fkl. Should probably be somewhere else.
+            def get_lines(xyz):
+                I = np.array([1, 2, 3, 1, 7, 8, 1, 13, 14, 15, 14, 18, 19, 14, 26, 27]) - 1
+                J = np.array([2, 3, 4, 7, 8, 9, 13, 14, 15, 16, 18, 19, 20, 26, 27, 28]) - 1
+                lines_to_ret = []
+                for j in range(len(I)):
+                    start_point = ( xyz_gt[i, I[j]*3] + 0,
+                                    xyz_gt[i, I[j]*3] + 1,
+                                    xyz_gt[i, I[j]*3] + 2 )
+
+                    end_point  =  ( xyz_gt[i, J[j]*3] + 0,
+                                    xyz_gt[i, J[j]*3] + 1,
+                                    xyz_gt[i, J[j]*3] + 2 )
+                    lines_to_ret.append((start_point, end_point))
+                return lines_to_ret
+
+            ### Plot the conditioning ground truth ### ===============================
             for i in range(true_frames):
-                ob.update(xyz_gt[i, :])
-                plt.show(block=False)
-                fig.canvas.draw()
-                plt.pause(0.12)
+                lines = get_lines(xyz_gt)
 
-            # Plot the prediction
+                #red for one side, blue for other
+                drawer.draw_lines(lines, [(255, 0, 0) if lr else (0, 0, 255) for lr in LR])
+                drawer.show()
+                plt.pause(0.12)
+                drawer.clear()
+
+            ### Plot the predictions and samples ### ==================================
             for i in range(pred_frames):
+                #sample a bunch and draw those
                 for j in range(0):
                     sample_pose = np.random.normal(means[i], sigmas[i])
                     xyz_sample = fkl(sample_pose, parent, offset, rotInd, expmapInd)
-                    ob.update(xyz_sample, rcolor="#ffa0c0", lcolor="#a0c0e0")
-                    plt.show(block=False)
-                    fig.canvas.draw()
-                    plt.pause(0.03)
-                ob.update(xyz_pred[i, :], rcolor="#f06090", lcolor="#6090b0")
-                plt.show(block=False)
-                fig.canvas.draw()
+                    lines = get_lines(xyz_sample)
+                    #very pale red blue to indicate samples
+                    drawer.draw_lines(lines, [(255, 200, 200) if lr else (200, 200, 255) for lr in LR])
+
+                #draw mean pose, slightly pale red blue to indicate predicting. On top of samples, so should stand out?
+                lines = get_lines(xyz_pred)
+                drawer.draw_lines(lines, [(255, 128, 128) if lr else (128, 128, 255) for lr in LR])
+                drawer.show()
                 plt.pause(0.12)
+                drawer.clear()
   else:
     parent, offset, rotInd, expmapInd = _some_variables()
     #directions, 1, 1, 180, 8, 10, 10 flips out
