@@ -1,7 +1,5 @@
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
 
 
 
@@ -16,9 +14,9 @@ class AnActuallySaneWayOfDrawingThings():
         self.ax = axis
 
     def __set_bounds(self):
-        ax.axes.set_xlim3d(left=self.minx, right=self.maxx)
-        ax.axes.set_ylim3d(bottom=self.miny, top=self.maxy)
-        ax.axes.set_zlim3d(bottom=self.minz, top=self.maxz)
+        self.ax.axes.set_xlim3d(left=self.minx, right=self.maxx)
+        self.ax.axes.set_ylim3d(bottom=self.miny, top=self.maxy)
+        self.ax.axes.set_zlim3d(bottom=self.minz, top=self.maxz)
 
     def draw_points(self, points, colors):
         self.__set_bounds()
@@ -45,21 +43,23 @@ class AnActuallySaneWayOfDrawingThings():
     def clear(self):
         self.ax.cla()
 
+def __main__():
+  fig = plt.figure()
+  ax = fig.add_subplot(111, projection='3d')
+  test_drawer = AnActuallySaneWayOfDrawingThings(ax, -3, -3, -3, 3, 3, 3)
+  test_drawer.draw_lines([[[1,1,1], [2,2,2]],
+                          [[1,2,3], [3,2,1]],
+                          [[-1,-1,-1], [1,1,1]]],
+                         [(1, 0, 0), (0, 1, 0), (0, 0, 1)])
+  test_drawer.show()
+  plt.pause(2)
+  test_drawer.clear()
+  
+  test_drawer.draw_lines([[[1,2,1], [2,3,2]],
+                          [[1,3,3], [3,3,1]],
+                          [[-1,0,-1], [1,2,1]]],
+                         [(1, 0.5, 0), (0.5, 1, 0), (0.5, 0, 1)])
 
-test_drawer = AnActuallySaneWayOfDrawingThings(ax, -3, -3, -3, 3, 3, 3)
-test_drawer.draw_lines([[[1,1,1], [2,2,2]],
-                        [[1,2,3], [3,2,1]],
-                        [[-1,-1,-1], [1,1,1]]],
-                       [(1, 0, 0), (0, 1, 0), (0, 0, 1)])
-test_drawer.show()
-plt.pause(2)
-test_drawer.clear()
-
-test_drawer.draw_lines([[[1,2,1], [2,3,2]],
-                        [[1,3,3], [3,3,1]],
-                        [[-1,0,-1], [1,2,1]]],
-                       [(1, 0.5, 0), (0.5, 1, 0), (0.5, 0, 1)])
-
-test_drawer.show()
-plt.pause(2)
-test_drawer.clear()
+  test_drawer.show()
+  plt.pause(2)
+  test_drawer.clear()

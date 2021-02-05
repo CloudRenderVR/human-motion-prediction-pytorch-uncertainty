@@ -263,14 +263,14 @@ def main():
         else:
             #define what we're predicting and displaying
             parent, offset, rotInd, expmapInd = _some_variables()
-            action = "eating"
+            action = "walking"
             subject = 1
             subaction = 1
             target_frame = 190
             history = 8
             true_frames = 50
             pred_frames = 10
-            model_dir = "model_results/eating_10_mle"
+            model_dir = "model_results/walking_10_mle"
             data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
             data = data[0][(subject, action, subaction, "even")]
 
@@ -296,7 +296,7 @@ def main():
             LR = np.array([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1], dtype=bool)
 
             import test_pyplot
-            drawer = test_pyplot.AnActuallySaneWayOfDrawingThings(ax, -3, -3, -3, 3, 3, 3)
+            drawer = test_pyplot.AnActuallySaneWayOfDrawingThings(ax, -500, -500, -500, 500, 500, 500)
 
             # Helper which extracts lines from an xyz returned from fkl. Should probably be somewhere else.
             def get_lines(xyz):
@@ -304,41 +304,47 @@ def main():
                 J = np.array([2, 3, 4, 7, 8, 9, 13, 14, 15, 16, 18, 19, 20, 26, 27, 28]) - 1
                 lines_to_ret = []
                 for j in range(len(I)):
-                    start_point = ( xyz_gt[i, I[j]*3] + 0,
-                                    xyz_gt[i, I[j]*3] + 1,
-                                    xyz_gt[i, I[j]*3] + 2 )
+                    start_point = ( xyz[I[j]*3 + 0],
+                                    xyz[I[j]*3 + 1],
+                                    xyz[I[j]*3 + 2] )
 
-                    end_point  =  ( xyz_gt[i, J[j]*3] + 0,
-                                    xyz_gt[i, J[j]*3] + 1,
-                                    xyz_gt[i, J[j]*3] + 2 )
+                    end_point  =  ( xyz[J[j]*3 + 0],
+                                    xyz[J[j]*3 + 1],
+                                    xyz[J[j]*3 + 2] )
                     lines_to_ret.append((start_point, end_point))
                 return lines_to_ret
-
+            
             ### Plot the conditioning ground truth ### ===============================
-            for i in range(true_frames):
-                lines = get_lines(xyz_gt)
+            for i in range(true_frames-10, true_frames):
+                lines = get_lines(xyz_gt[i])
 
                 #red for one side, blue for other
-                drawer.draw_lines(lines, [(255, 0, 0) if lr else (0, 0, 255) for lr in LR])
+                drawer.draw_lines(lines, [(1, 0, 0) if lr else (0, 0, 1) for lr in LR])
                 drawer.show()
-                plt.pause(0.12)
+                plt.pause(0.3)
                 drawer.clear()
 
             ### Plot the predictions and samples ### ==================================
             for i in range(pred_frames):
+                lines = []
+                colors = []
                 #sample a bunch and draw those
-                for j in range(0):
+                for j in range(16):
                     sample_pose = np.random.normal(means[i], sigmas[i])
                     xyz_sample = fkl(sample_pose, parent, offset, rotInd, expmapInd)
-                    lines = get_lines(xyz_sample)
-                    #very pale red blue to indicate samples
-                    drawer.draw_lines(lines, [(255, 200, 200) if lr else (200, 200, 255) for lr in LR])
-
+                    lines  += get_lines(xyz_sample)
+                    colors += [(1, .8, .8) if lr else (.8, .8, 1) for lr in LR]
+                for j in range(16):
+                    sample_pose = np.random.normal(means[i], sigmas[i]/2)
+                    xyz_sample = fkl(sample_pose, parent, offset, rotInd, expmapInd)
+                    lines  += get_lines(xyz_sample)
+                    colors += [(1, .6, .6) if lr else (.6, .6, 1) for lr in LR]
                 #draw mean pose, slightly pale red blue to indicate predicting. On top of samples, so should stand out?
-                lines = get_lines(xyz_pred)
-                drawer.draw_lines(lines, [(255, 128, 128) if lr else (128, 128, 255) for lr in LR])
+                lines  += get_lines(xyz_pred[i])
+                colors += [(1, .3, .3) if lr else (.3, .3, 1) for lr in LR]
+                drawer.draw_lines(lines, colors)
                 drawer.show()
-                plt.pause(0.12)
+                plt.pause(0.3)
                 drawer.clear()
   else:
     parent, offset, rotInd, expmapInd = _some_variables()
