@@ -349,7 +349,7 @@ def main():
                 colors += [(1, .3, .3) if lr else (.3, .3, 1) for lr in LR]
                 drawer.draw_lines(lines, colors)
                 drawer.show()
-                plt.pause(0.3)
+                plt.pause(.3)
                 drawer.clear()
   else:
     parent, offset, rotInd, expmapInd = _some_variables()
