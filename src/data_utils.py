@@ -8,6 +8,8 @@ from __future__ import print_function
 import numpy as np
 from six.moves import xrange # pylint: disable=redefined-builtin
 import copy
+import flags
+import data_utils
 
 def rotmat2euler( R ):
   """
@@ -240,7 +242,7 @@ def load_data(path_to_dataset, subjects, actions, one_hot):
 
       action = actions[ action_idx ]
 
-      for subact in [1, 2]:  # subactions
+      for subact in [1, 2]:  # subactionsasdf
 
         print("Reading subject {0}, action {1}, subaction {2}".format(subj, action, subact))
 
@@ -248,6 +250,15 @@ def load_data(path_to_dataset, subjects, actions, one_hot):
         action_sequence = readCSVasFloat(filename)
 
         n, d = action_sequence.shape
+
+
+        if flags.convert_to_euler_first:
+          for j in np.arange(n):
+            for k in np.arange(3, 97, 3):
+              action_sequence[j, k:k + 3] = data_utils.rotmat2euler(
+                data_utils.expmap2rotmat(action_sequence[j, k:k + 3]))
+
+
         even_list = range(0, n, 2)
 
         if one_hot:
