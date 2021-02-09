@@ -263,14 +263,14 @@ def main():
         else:
             #define what we're predicting and displaying
             parent, offset, rotInd, expmapInd = _some_variables()
-            action = "walking"
+            action = "discussion"
             subject = 1
             subaction = 1
             target_frame = 190
             history = 8
             true_frames = 50
             pred_frames = 10
-            model_dir = "model_results/walking_10_mle"
+            model_dir = "model_results/discussion_euler_10_mle"
             data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
             data = data[0][(subject, action, subaction, "even")]
 

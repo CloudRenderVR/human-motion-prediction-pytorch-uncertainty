@@ -21,7 +21,7 @@ def main():
 
     # directions, 1, 1, 180, 8, 10, 10 flips out
 
-    angles_to_wiggle = range(1, 99, 3)
+    angles_to_wiggle = range(56, 70, 1)
 
     # === Plot and animate ===
     fig = plt.figure()
