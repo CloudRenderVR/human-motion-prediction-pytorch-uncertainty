@@ -282,8 +282,8 @@ def main():
 
             means, sigmas = model_caller.predict(model, poses_in, true_frames - 1, use_noise=False)
             xyz_gt, xyz_pred = np.zeros((true_frames, 96)), np.zeros((pred_frames, 96))
-            for i in range(true_frames):
-                xyz_gt[i, :] = fkl(data[target_frame - true_frames:target_frame][i, :], parent, offset, rotInd,
+            for i in range(true_frames+pred_frames):
+                xyz_gt[i, :] = fkl(data[target_frame - true_frames:target_frame+pred_frames][i, :], parent, offset, rotInd,
                                    expmapInd)
             for i in range(pred_frames):
                 xyz_pred[i, :] = fkl(means[i, :], parent, offset, rotInd, expmapInd)
@@ -324,13 +324,17 @@ def main():
                 drawer.show()
                 plt.pause(0.3)
                 drawer.clear()
-
             import translate
             flags.translate_loss_func = "mle"
             ### Plot the predictions and samples ### ==================================
             for i in range(pred_frames):
                 lines = []
                 colors = []
+                if flags.fk_show_history:
+                    for j in range(true_frames):
+                        lines += get_lines(xyz_gt[i-true_frames+j])
+                        colors += [(.9 - (j*.3/true_frames), .9 - (j*.3/true_frames), 1) for lr in LR]
+
                 #sample a bunch and draw those
                 for j in range(16):
                     sample_pose = np.random.normal(means[i], sigmas[i])
@@ -348,6 +352,10 @@ def main():
                 #draw mean pose, slightly pale red blue to indicate predicting. On top of samples, so should stand out?
                 lines  += get_lines(xyz_pred[i])
                 colors += [(1, .3, .3) if lr else (.3, .3, 1) for lr in LR]
+                if flags.fk_show_truth:
+                    lines += get_lines(xyz_gt[true_frames+i])
+                    colors += [(0,0,0) for lr in LR]
+
                 drawer.draw_lines(lines, colors)
                 drawer.show()
                 plt.pause(.3)
