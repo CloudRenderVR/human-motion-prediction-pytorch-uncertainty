@@ -164,9 +164,10 @@ def taylor_approximation(derivatives, steps):
 #Hardcoded as a test
 if __name__ == "__main__":
     filename  = "./data/h3.6m/dataset/S1/walking_1.txt"
-    model_location = "model_results/walking_10_mle"
+    model_location = "model_results/walking_euler_10_mle"
     action_sequence = data_utils.readCSVasFloat(filename)
     model = torch.load(model_location)
     prediction = get_both(5, model, action_sequence, 70)
     print(prediction)
+    print(prediction[0][0][54], prediction[0][0][55], prediction[0][0][56], prediction[0][0][57], prediction[0][0][60], prediction[0][0][61], prediction[0][0][62])
     pass
