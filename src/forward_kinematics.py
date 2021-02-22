@@ -264,24 +264,22 @@ def main():
         else:
             #define what we're predicting and displaying
             parent, offset, rotInd, expmapInd = _some_variables()
-            action = "discussion"
+            action = "walking"
             subject = 1
             subaction = 1
             target_frame = 190
             history = 8
             true_frames = 50
             pred_frames = 10
-            model_dir = "model_results/discussion_euler_10_mle"
+            model_dir = "model_results/walking_10_mle"
             data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
             data = data[0][(subject, action, subaction, "even")]
 
-
             ### LOAD MODEL AND PREDICT ### =============================================
             model = torch.load(model_dir)
-            poses_in = data[target_frame - true_frames:target_frame]
-
+            poses_in = data[target_frame - true_frames:target_frame+pred_frames]
             means, sigmas = model_caller.predict(model, poses_in, true_frames - 1, use_noise=False)
-            xyz_gt, xyz_pred = np.zeros((true_frames, 96)), np.zeros((pred_frames, 96))
+            xyz_gt, xyz_pred = np.zeros((true_frames+pred_frames, 96)), np.zeros((pred_frames, 96))
             for i in range(true_frames+pred_frames):
                 xyz_gt[i, :] = fkl(data[target_frame - true_frames:target_frame+pred_frames][i, :], parent, offset, rotInd,
                                    expmapInd)
@@ -327,13 +325,14 @@ def main():
             import translate
             flags.translate_loss_func = "mle"
             ### Plot the predictions and samples ### ==================================
-            for i in range(pred_frames):
+            while True:
+              for i in range(pred_frames):
                 lines = []
                 colors = []
                 if flags.fk_show_history:
-                    for j in range(true_frames):
+                    for j in range(pred_frames):
                         lines += get_lines(xyz_gt[i-true_frames+j])
-                        colors += [(.9 - (j*.3/true_frames), .9 - (j*.3/true_frames), 1) for lr in LR]
+                        colors += [(.6 - (j*.3/true_frames), 1, .6 - (j*.3/true_frames)) for lr in LR]
 
                 #sample a bunch and draw those
                 for j in range(16):

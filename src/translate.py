@@ -92,7 +92,8 @@ parser.add_argument('--load', dest='load',
 parser.add_argument('--sample', dest='sample',
                   help='Set to True for sampling.', action='store_true',
                   default=False)
-
+parser.add_argument('--distribution_output_direct', dest='distribution_output_direct',
+                  default=False)
 
 args = parser.parse_args()
 
@@ -112,7 +113,6 @@ os.makedirs(train_dir, exist_ok=True)
 
 def create_model(actions, sampling=False):
   """Create translation model and initialize or load parameters in session."""
-
   model = seq2seq_model.Seq2SeqModel(
       args.architecture,
       args.seq_length_in if not sampling else 50,
@@ -128,6 +128,7 @@ def create_model(actions, sampling=False):
       not args.omit_one_hot,
       args.residual_velocities,
       args.finite_taylor_extrapolate,
+      output_as_normal_distribution = args.distribution_output_direct,
       dtype=torch.float32)
 
   if args.load <= 0:
