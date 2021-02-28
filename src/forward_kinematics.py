@@ -314,13 +314,19 @@ def main():
                 return lines_to_ret
             
             ### Plot the conditioning ground truth ### ===============================
+            wait_for_view_angle = True
+            frame_number_to_save = 0
             for i in range(true_frames-10, true_frames):
                 lines = get_lines(xyz_gt[i])
 
                 #red for one side, blue for other
                 drawer.draw_lines(lines, [(1, 0, 0) if lr else (0, 0, 1) for lr in LR])
-                drawer.show()
+                drawer.show(str(frame_number_to_save)+".png")
                 plt.pause(0.3)
+                frame_number_to_save += 1
+                if(wait_for_view_angle):
+                    plt.pause(4.0)
+                    wait_for_view_angle = False
                 drawer.clear()
             import translate
             flags.translate_loss_func = "mle"
@@ -356,7 +362,8 @@ def main():
                     colors += [(0,0,0) for lr in LR]
 
                 drawer.draw_lines(lines, colors)
-                drawer.show()
+                drawer.show(str(frame_number_to_save)+".png")
+                frame_number_to_save += 1
                 plt.pause(.3)
                 drawer.clear()
   else:

@@ -36,6 +36,7 @@ class AnActuallySaneWayOfDrawingThings():
             i+=1
 
     def show(self, save_name=""):
+        self.ax.set_axis_off()
         plt.show(block=False)
         if(save_name != ""):
             plt.savefig(save_name)

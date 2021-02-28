@@ -3,8 +3,8 @@
 fk_taylor = False
 fk_display_uncertainty = True
 fk_use_sampling = False
-fk_show_history = True
-fk_show_future = True
+fk_show_history = False
+fk_show_future = False
 fk_show_truth = True
 
 translate_loss_func = "mle"#"mle" #mse, me, mle (max likelihood)
