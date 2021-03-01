@@ -287,7 +287,7 @@ def train():
           #Exp here means experiment, not expmap
           for steps in range(2, 16, 2):
               preds_exp = preds[ :, 0:steps, : ]
-              decoder_out_exp = decoder_outputs[ :, 0:steps, : ]
+              decoder_out_exp = decoder_outputs[ :, steps-1, : ]
 
               mse_exp = torch.mean( (preds_exp[..., :54] - decoder_out_exp)**2)
               #Actually does a whole batch at once, so this needs to divide to get actual number
@@ -307,6 +307,7 @@ def train():
 
               srnn_loss = get_loss(srnn_poses, decoder_outputs)
               #TODO:
+              sigmas = srnn_poses[...,54:]
               srnn_poses = srnn_poses[...,:54]
 
               srnn_poses = srnn_poses.cpu().data.numpy()
@@ -317,13 +318,18 @@ def train():
               srnn_pred_expmap = data_utils.revert_output_format( srnn_poses,
                 data_mean, data_std, dim_to_ignore, actions, not args.omit_one_hot )
 
+              sigmas_reverted = data_utils.revert_output_format(sigmas,
+                np.zeros(data_mean.shape), data_std, dim_to_ignore, [], False)
+
+
+
               # Save the errors here
               mean_errors = np.zeros( (len(srnn_pred_expmap), srnn_pred_expmap[0].shape[0]) )
 
               # Training is done in exponential map, but the error is reported in
               # Euler angles, as in previous work.
               # See https://github.com/asheshjain399/RNNexp/issues/6#issuecomment-247769197
-              N_SEQUENCE_TEST = 8
+              N_SEQUENCE_TEST = 256
               for i in np.arange(N_SEQUENCE_TEST):
                 eulerchannels_pred = srnn_pred_expmap[i]
 
@@ -346,20 +352,34 @@ def train():
                 # https://github.com/asheshjain399/RNNexp/blob/srnn/structural_rnn/CRFProblems/H3.6m/dataParser/Utils/motionGenerationError.m#L40-L54
                 idx_to_use = np.where( np.std( gt_i, 0 ) > 1e-4 )[0]
 
+
                 euc_error = np.power( gt_i[:,idx_to_use] - eulerchannels_pred[:,idx_to_use], 2)
                 euc_error = np.sum(euc_error, 1)
                 euc_error = np.sqrt( euc_error )
                 mean_errors[i,:] = euc_error
+
+              #Select same indices of sigmas
+              import pdb; pdb.set_trace()
+              sigmas_reverted = sigmas_reverted.mean(0)
+              sigmas_reverted = sigmas_reverted[:,idx_to_use]
+              sigmas_reverted = sigmas_reverted.mean(1)
               # This is simply the mean error over the N_SEQUENCE_TEST examples
               mean_mean_errors = np.mean( mean_errors, 0 )
 
-              # Pretty print of the results for 80, 160, 320, 400, 560 and 1000 ms
+              # Pretty print of the results for 80, 160, 240, 320, 400, 480, 560 and 1000 ms
               print("{0: <16} |".format(action), end="")
-              for ms in [1,3,7,9,13,24]:
+              for ms in [1,3,5,7,9,11,13,24]:
                 if args.seq_length_out >= ms+1:
                   print(" {0:.3f} |".format( mean_mean_errors[ms] ), end="")
                 else:
                   print("   n/a |", end="")
+              print()
+              print("{0: <16} |".format("sigmas"), end="")
+              for ms in [1, 3, 5, 7, 9, 11, 13, 24]:
+                  if args.seq_length_out >= ms + 1:
+                      print(" {0:.3f} |".format(sigmas_reverted[ms]), end="")
+                  else:
+                      print("   n/a |", end="")
               print()
         model.batch_size = 16
         print()
