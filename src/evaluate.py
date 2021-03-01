@@ -297,9 +297,9 @@ def train():
               mse_string += " {0:.5f} \t|".format(mse_exp)
               mle_string += " {0:.2f} \t|".format(mle_exp)
               sig_string += " {0:.5f} \t|".format(sig_exp)
-          print(mse_string)
+          #print(mse_string)
           print(mle_string)
-          print(sig_string)
+          #print(sig_string)
 
           if True:
               srnn_poses = model(encoder_inputs, decoder_inputs)
@@ -319,8 +319,8 @@ def train():
                 data_mean, data_std, dim_to_ignore, actions, not args.omit_one_hot )
 
               experiment_predicted_means = np.array(srnn_pred_expmap)
-              experiment_truth           = np.array(data_utils.revert_output_format( decoder_outputs.cpu().data.numpy()),
-                data_mean, data_std, dim_to_ignore, actions, not args.omit_one_hot )
+              experiment_truth           = np.array(data_utils.revert_output_format( decoder_outputs.cpu().data.numpy(),
+                data_mean, data_std, dim_to_ignore, actions, not args.omit_one_hot ))
 
               sigmas_reverted = data_utils.revert_output_format(sigmas,
                 np.zeros(data_mean.shape), data_std, dim_to_ignore, actions, False)
@@ -358,42 +358,37 @@ def train():
                 # https://github.com/asheshjain399/RNNexp/blob/srnn/structural_rnn/CRFProblems/H3.6m/dataParser/Utils/motionGenerationError.m#L40-L54
                 idx_to_use = np.where( np.std( gt_i, 0 ) > 1e-4 )[0]
 
-
                 euc_error = np.power( gt_i[:,idx_to_use] - eulerchannels_pred[:,idx_to_use], 2)
                 euc_error = np.sum(euc_error, 1)
                 euc_error = np.sqrt( euc_error )
                 mean_errors[i,:] = euc_error
-
 
               #Select same indices of sigmas
               sigmas_reverted = sigmas_reverted.mean(1)
               sigmas_reverted = sigmas_reverted[:,idx_to_use]
               sigmas_reverted = sigmas_reverted.mean(1)
 
-              import pdb; pdb.set_trace()
               experiment_truth = experiment_truth[:, :, idx_to_use]
               experiment_predicted_means = experiment_predicted_means[:, :, idx_to_use]
-              experiment_mse  = np.mean((experiment_truth - experiment_predicted_means)**2)
-
-              sigmas_reverted = sigmas_reverted.mean(1)
-              sigmas_reverted = sigmas_reverted[:, idx_to_use]
-              sigmas_reverted = sigmas_reverted.mean(1)
+              experiment_predicted_means = np.transpose(experiment_predicted_means, (1, 0, 2))
+              
+              experiment_eucerror     = np.sqrt(np.sum( (experiment_truth - experiment_predicted_means)**2 , 2))
+              experiment_meaneucerror = np.mean(experiment_eucerror, 1)
 
               # This is simply the mean error over the N_SEQUENCE_TEST examples
               mean_mean_errors = np.mean( mean_errors, 0 )
-
               # Pretty print of the results for 80, 160, 240, 320, 400, 480, 560 and 1000 ms
-              print("{0: <16} |".format(action), end="")
-              for ms in [1,3,5,7,9,11,13,24]:
-                if args.seq_length_out >= ms+1:
-                  print(" {0:.3f} |".format( mean_mean_errors[ms] ), end="")
-                else:
-                  print("   n/a |", end="")
-              print()
+              #print("{0: <16} |".format(action), end="")
+              #for ms in [1,3,5,7,9,11,13,24]:
+              #  if args.seq_length_out >= ms+1:
+              #    print(" {0:.3f} |".format( mean_mean_errors[ms] ), end="")
+              #  else:
+              #    print("   n/a |", end="")
+              #print()
               print("{0: <16} |".format(action), end="")
               for ms in [1, 3, 5, 7, 9, 11, 13, 24]:
                   if args.seq_length_out >= ms + 1:
-                      print(" {0:.3f} |".format(experiment_mse[ms]), end="")
+                      print(" {0:.3f} |".format(experiment_meaneucerror[ms]), end="")
                   else:
                       print("   n/a |", end="")
               print()
@@ -629,9 +624,9 @@ def read_all_data(actions, seq_length_in, seq_length_out, data_dir, one_hot):
     print("Reading training data (seq_len_in: {0}, seq_len_out {1}).".format(
         seq_length_in, seq_length_out))
 
-    train_subject_ids = [1, 6, 7, 9, 11]
+    train_subject_ids = [1, 6, 7, 8, 9, 11]
     test_subject_ids  = [5]
-    experiment_subject_ids   = [8]
+    experiment_subject_ids   = [5]
 
     train_set, complete_train = data_utils.load_data(data_dir, train_subject_ids, actions, one_hot)
     test_set, complete_test = data_utils.load_data(data_dir, test_subject_ids, actions, one_hot)
