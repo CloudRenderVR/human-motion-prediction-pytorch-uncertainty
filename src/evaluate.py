@@ -286,7 +286,7 @@ def train():
 
           #Exp here means experiment, not expmap
           for steps in range(2, 16, 2):
-              preds_exp = preds[ :, 0:steps, : ]
+              preds_exp = preds[ :, steps-1, : ]
               decoder_out_exp = decoder_outputs[ :, steps-1, : ]
 
               mse_exp = torch.mean( (preds_exp[..., :54] - decoder_out_exp)**2)
@@ -307,20 +307,21 @@ def train():
 
               srnn_loss = get_loss(srnn_poses, decoder_outputs)
               #TODO:
+              srnn_poses = srnn_poses.cpu().data.numpy()
               sigmas = srnn_poses[...,54:]
               srnn_poses = srnn_poses[...,:54]
 
-              srnn_poses = srnn_poses.cpu().data.numpy()
               srnn_poses = srnn_poses.transpose([1,0,2])
 
               srnn_loss = srnn_loss.cpu().data.numpy()
               # Denormalize the output
               srnn_pred_expmap = data_utils.revert_output_format( srnn_poses,
                 data_mean, data_std, dim_to_ignore, actions, not args.omit_one_hot )
+              
 
               sigmas_reverted = data_utils.revert_output_format(sigmas,
-                np.zeros(data_mean.shape), data_std, dim_to_ignore, [], False)
-
+                np.zeros(data_mean.shape), data_std, dim_to_ignore, actions, False)
+              sigmas_reverted = np.array(sigmas_reverted)
 
 
               # Save the errors here
@@ -329,7 +330,7 @@ def train():
               # Training is done in exponential map, but the error is reported in
               # Euler angles, as in previous work.
               # See https://github.com/asheshjain399/RNNexp/issues/6#issuecomment-247769197
-              N_SEQUENCE_TEST = 256
+              N_SEQUENCE_TEST = 8 
               for i in np.arange(N_SEQUENCE_TEST):
                 eulerchannels_pred = srnn_pred_expmap[i]
 
@@ -344,6 +345,7 @@ def train():
                 # (next 3 entries) are also not considered in the error, so the_key
                 # are set to zero.
                 # See https://github.com/asheshjain399/RNNexp/issues/6#issuecomment-249404882
+                import pdb; pdb.set_trace()
                 gt_i=np.copy(srnn_gts_euler[action][i])
                 gt_i[:,0:6] = 0
 
@@ -359,8 +361,7 @@ def train():
                 mean_errors[i,:] = euc_error
 
               #Select same indices of sigmas
-              import pdb; pdb.set_trace()
-              sigmas_reverted = sigmas_reverted.mean(0)
+              sigmas_reverted = sigmas_reverted.mean(1)
               sigmas_reverted = sigmas_reverted[:,idx_to_use]
               sigmas_reverted = sigmas_reverted.mean(1)
               # This is simply the mean error over the N_SEQUENCE_TEST examples
