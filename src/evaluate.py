@@ -270,7 +270,7 @@ def train():
         for ms in [80, 160, 320, 400, 560, 1000]:
           print(" {0:5d} \t|".format(ms), end="")
         print()
-
+        model.batch_size = 256
         # === Validation with srnn's seeds ===
         for action in actions:
 
@@ -278,9 +278,9 @@ def train():
           #### Evaluate model on action
 
           encoder_inputs, decoder_inputs, decoder_outputs = clean_batch(model.get_batch(experiment_set, action))
-          mle_string = "lik "+action+"\t|"
-          mse_string = "mse "+action+"\t|"
-          sig_string = "sig "+action+"\t|"
+          mle_string = "   lik "+action+"\t\t|"
+          mse_string = "   mse "+action+"\t\t|"
+          sig_string = "   sig "+action+"\t\t|"
 
           preds = model(encoder_inputs, decoder_inputs)
 
@@ -290,15 +290,18 @@ def train():
               decoder_out_exp = decoder_outputs[ :, 0:steps, : ]
 
               mse_exp = torch.mean( (preds_exp[..., :54] - decoder_out_exp)**2)
-              mle_exp = get_loss(preds_exp, decoder_out_exp)
+              #Actually does a whole batch at once, so this needs to divide to get actual number
+              mle_exp = get_loss(preds_exp, decoder_out_exp)/model.batch_size
               sig_exp = torch.mean(preds_exp[..., 54:])
 
-              mse_string += " {0:2d} \t|".format(mse_exp)
-              mle_string += " {0:2d} \t|".format(mle_exp)
-              sig_string += " {0:2d} \t|".format(sig_exp)
+              mse_string += " {0:.5f} \t|".format(mse_exp)
+              mle_string += " {0:.2f} \t|".format(mle_exp)
+              sig_string += " {0:.5f} \t|".format(sig_exp)
+          print(mse_string)
+          print(mle_string)
+          print(sig_string)
 
-
-          if False:
+          if True:
               srnn_poses = model(encoder_inputs, decoder_inputs)
 
 
@@ -325,10 +328,11 @@ def train():
                 eulerchannels_pred = srnn_pred_expmap[i]
 
                 # Convert from exponential map to Euler angles
-                for j in np.arange( eulerchannels_pred.shape[0] ):
-                  for k in np.arange(3,97,3):
-                    eulerchannels_pred[j,k:k+3] = data_utils.rotmat2euler(
-                      data_utils.expmap2rotmat( eulerchannels_pred[j,k:k+3] ))
+                if not flags.convert_to_euler_first:
+                  for j in np.arange( eulerchannels_pred.shape[0] ):
+                    for k in np.arange(3,97,3):
+                      eulerchannels_pred[j,k:k+3] = data_utils.rotmat2euler(
+                        data_utils.expmap2rotmat( eulerchannels_pred[j,k:k+3] ))
 
                 # The global translation (first 3 entries) and global rotation
                 # (next 3 entries) are also not considered in the error, so the_key
@@ -346,7 +350,6 @@ def train():
                 euc_error = np.sum(euc_error, 1)
                 euc_error = np.sqrt( euc_error )
                 mean_errors[i,:] = euc_error
-
               # This is simply the mean error over the N_SEQUENCE_TEST examples
               mean_mean_errors = np.mean( mean_errors, 0 )
 
@@ -358,7 +361,7 @@ def train():
                 else:
                   print("   n/a |", end="")
               print()
-
+        model.batch_size = 16
         print()
         print("============================\n"
               "Global step:         %d\n"
@@ -367,11 +370,9 @@ def train():
               "Train loss avg:      %.4f\n"
               "--------------------------\n"
               "Val loss:            %.4f\n"
-              "srnn loss:           %.4f\n"
-              "MSE loss:            %.4f\n"
               "============================" % (current_step,
               args.learning_rate, step_time*1000, loss,
-              val_loss, srnn_loss, mse_loss))
+              val_loss))
         with open("training_out.txt", 'a+') as f:
             f.write(action + " " + str(current_step)+": "+str(val_loss)+"\n")
         torch.save(model, train_dir + '/model_' + str(current_step))
@@ -587,7 +588,7 @@ def read_all_data(actions, seq_length_in, seq_length_out, data_dir, one_hot):
 
     train_subject_ids = [1, 6, 7, 9, 11]
     test_subject_ids  = [5]
-    experiment_subject_ids   = [7]
+    experiment_subject_ids   = [8]
 
     train_set, complete_train = data_utils.load_data(data_dir, train_subject_ids, actions, one_hot)
     test_set, complete_test = data_utils.load_data(data_dir, test_subject_ids, actions, one_hot)
