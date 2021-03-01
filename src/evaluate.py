@@ -317,7 +317,10 @@ def train():
               # Denormalize the output
               srnn_pred_expmap = data_utils.revert_output_format( srnn_poses,
                 data_mean, data_std, dim_to_ignore, actions, not args.omit_one_hot )
-              
+
+              experiment_predicted_means = np.array(srnn_pred_expmap)
+              experiment_truth           = np.array(data_utils.revert_output_format( decoder_outputs.cpu().data.numpy()),
+                data_mean, data_std, dim_to_ignore, actions, not args.omit_one_hot )
 
               sigmas_reverted = data_utils.revert_output_format(sigmas,
                 np.zeros(data_mean.shape), data_std, dim_to_ignore, actions, False)
@@ -330,7 +333,9 @@ def train():
               # Training is done in exponential map, but the error is reported in
               # Euler angles, as in previous work.
               # See https://github.com/asheshjain399/RNNexp/issues/6#issuecomment-247769197
-              N_SEQUENCE_TEST = 8 
+
+              #Literally just here for idx_to_use right now
+              N_SEQUENCE_TEST = 8
               for i in np.arange(N_SEQUENCE_TEST):
                 eulerchannels_pred = srnn_pred_expmap[i]
 
@@ -345,7 +350,6 @@ def train():
                 # (next 3 entries) are also not considered in the error, so the_key
                 # are set to zero.
                 # See https://github.com/asheshjain399/RNNexp/issues/6#issuecomment-249404882
-                import pdb; pdb.set_trace()
                 gt_i=np.copy(srnn_gts_euler[action][i])
                 gt_i[:,0:6] = 0
 
@@ -360,10 +364,21 @@ def train():
                 euc_error = np.sqrt( euc_error )
                 mean_errors[i,:] = euc_error
 
+
               #Select same indices of sigmas
               sigmas_reverted = sigmas_reverted.mean(1)
               sigmas_reverted = sigmas_reverted[:,idx_to_use]
               sigmas_reverted = sigmas_reverted.mean(1)
+
+              import pdb; pdb.set_trace()
+              experiment_truth = experiment_truth[:, :, idx_to_use]
+              experiment_predicted_means = experiment_predicted_means[:, :, idx_to_use]
+              experiment_mse  = np.mean((experiment_truth - experiment_predicted_means)**2)
+
+              sigmas_reverted = sigmas_reverted.mean(1)
+              sigmas_reverted = sigmas_reverted[:, idx_to_use]
+              sigmas_reverted = sigmas_reverted.mean(1)
+
               # This is simply the mean error over the N_SEQUENCE_TEST examples
               mean_mean_errors = np.mean( mean_errors, 0 )
 
@@ -374,6 +389,13 @@ def train():
                   print(" {0:.3f} |".format( mean_mean_errors[ms] ), end="")
                 else:
                   print("   n/a |", end="")
+              print()
+              print("{0: <16} |".format(action), end="")
+              for ms in [1, 3, 5, 7, 9, 11, 13, 24]:
+                  if args.seq_length_out >= ms + 1:
+                      print(" {0:.3f} |".format(experiment_mse[ms]), end="")
+                  else:
+                      print("   n/a |", end="")
               print()
               print("{0: <16} |".format("sigmas"), end="")
               for ms in [1, 3, 5, 7, 9, 11, 13, 24]:
