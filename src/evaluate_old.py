@@ -323,6 +323,7 @@ def train():
               # Denormalize the output
               srnn_pred_expmap = data_utils.revert_output_format( srnn_poses,
                 data_mean, data_std, dim_to_ignore, actions, not args.omit_one_hot )
+              
 
               experiment_predicted_means = np.array(srnn_pred_expmap)
               experiment_truth           = np.array(data_utils.revert_output_format( decoder_outputs.cpu().data.numpy(),
