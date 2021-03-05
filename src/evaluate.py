@@ -325,7 +325,7 @@ def train():
               sigmas_reverted = data_utils.revert_output_format(sigmas,
                 np.zeros(data_mean.shape), data_std, dim_to_ignore, actions, False)
               sigmas_reverted = np.array(sigmas_reverted)
-
+              experiment_sigmas = sigmas_reverted.copy().transpose([1,0,2])
 
               # Save the errors here
               mean_errors = np.zeros( (len(srnn_pred_expmap), srnn_pred_expmap[0].shape[0]) )
@@ -371,7 +371,22 @@ def train():
               experiment_truth = experiment_truth[:, :, idx_to_use]
               experiment_predicted_means = experiment_predicted_means[:, :, idx_to_use]
               experiment_predicted_means = np.transpose(experiment_predicted_means, (1, 0, 2))
-              
+
+
+              SMSEs = np.zeros(experiment_truth.shape[0])
+              if flags.evaluate_do_SMSE:
+                  import pdb; pdb.set_trace()
+                  experiment_sigmas = experiment_sigmas[:, :, idx_to_use]
+                  K = 50
+
+                  samples = np.normal(experiment_truth, experiment_sigmas, K)
+
+                  MAEs = np.zeros(K)
+
+                  for q in range(K):
+                      MAEs[q] = np.sqrt(np.sum( (experiment_truth - samples[q])**2 , 2))
+                  SMSEs = MAEs.mean((0, 2))
+
               experiment_eucerror     = np.sqrt(np.sum( (experiment_truth - experiment_predicted_means)**2 , 2))
               experiment_meaneucerror = np.mean(experiment_eucerror, 1)
 
@@ -389,6 +404,13 @@ def train():
               for ms in [1, 3, 5, 7, 9, 11, 13, 24]:
                   if args.seq_length_out >= ms + 1:
                       print(" {0:.3f} |".format(experiment_meaneucerror[ms]), end="")
+                  else:
+                      print("   n/a |", end="")
+              print()
+              print("{0: <16} |".format("S-MSEs"), end="")
+              for ms in [1, 3, 5, 7, 9, 11, 13, 24]:
+                  if args.seq_length_out >= ms + 1:
+                      print(" {0:.3f} |".format(SMSEs[ms]), end="")
                   else:
                       print("   n/a |", end="")
               print()

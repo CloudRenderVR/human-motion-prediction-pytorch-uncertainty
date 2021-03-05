@@ -3,12 +3,14 @@
 fk_taylor = False
 fk_display_uncertainty = True
 fk_use_sampling = False
+fk_show_samples = True
 fk_show_history = False
 fk_show_future = False
 fk_show_truth = True
 
-translate_loss_func = "mle"#"mle" #mse, me, mle (max likelihood)
+translate_loss_func = "mae"#"mle" #mse, me, mle (max likelihood)
 convert_to_euler_first = False
+evaluate_do_SMSE = True
 
 
 
