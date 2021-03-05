@@ -324,10 +324,25 @@ def train():
               srnn_pred_expmap = data_utils.revert_output_format( srnn_poses,
                 data_mean, data_std, dim_to_ignore, actions, not args.omit_one_hot )
               
+              #(256, 14, 99)
 
               experiment_predicted_means = np.array(srnn_pred_expmap)
               experiment_truth           = np.array(data_utils.revert_output_format( decoder_outputs.cpu().data.numpy(),
                 data_mean, data_std, dim_to_ignore, actions, not args.omit_one_hot ))
+
+              #revert to euler
+              if not flags.convert_to_euler_first:
+                for m in range(experiment_predicted_means.shape[0]):
+                  for j in range(experiment_predicted_means.shape[1]):
+                    for k in np.arange(3,97,3):
+                      experiment_predicted_means[m,j,k:k+3] = data_utils.rotmat2euler(
+                          data_utils.expmap2rotmat( experiment_predicted_means[m,j,k:k+3] ))
+                for m in range(experiment_truth.shape[0]):
+                  for j in range(experiment_truth.shape[1]):
+                    for k in np.arange(3,97,3):
+                      experiment_truth[m,j,k:k+3] = data_utils.rotmat2euler(
+                          data_utils.expmap2rotmat( experiment_truth[m,j,k:k+3] ))
+
 
               sigmas_reverted = data_utils.revert_output_format(sigmas,
                 np.zeros(data_mean.shape), data_std, dim_to_ignore, actions, False)
