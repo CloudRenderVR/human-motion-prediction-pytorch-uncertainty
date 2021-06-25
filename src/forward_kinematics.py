@@ -264,14 +264,14 @@ def main():
         else:
             #define what we're predicting and displaying
             parent, offset, rotInd, expmapInd = _some_variables()
-            action = "walking"
-            subject = 1
+            action = "discussion"
+            subject = 5
             subaction = 1
-            target_frame = 190
+            target_frame = 230
             history = 8
             true_frames = 50
             pred_frames = 10
-            model_dir = "model_results/walking_10_mle"
+            model_dir = "model_results/discussion_10_mle"
             data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
             data = data[0][(subject, action, subaction, "even")]
 
@@ -321,7 +321,7 @@ def main():
 
                 #red for one side, blue for other
                 drawer.draw_lines(lines, [(1, 0, 0) if lr else (0, 0, 1) for lr in LR])
-                drawer.show(str(frame_number_to_save)+".png")
+                drawer.show("single_dist_upper_discussion/"+str(frame_number_to_save)+".png")
                 plt.pause(0.3)
                 frame_number_to_save += 1
                 if(wait_for_view_angle):
@@ -337,32 +337,37 @@ def main():
                 colors = []
                 if flags.fk_show_history:
                     for j in range(pred_frames):
-                        lines += get_lines(xyz_gt[i-true_frames+j])
+                        lines += get_lines(xyz_gt[true_frames+i-j])
                         colors += [(.6 - (j*.3/true_frames), 1, .6 - (j*.3/true_frames)) for lr in LR]
 
+                if flags.fk_show_future:
+                    for j in range(pred_frames-i):
+                        lines += get_lines(xyz_pred[i+j])
+                        colors += [(.6 - (j*.3/pred_frames), .6 - (j*.3/pred_frames), 1) for lr in LR]
                 #sample a bunch and draw those
-                for j in range(16):
-                    sample_pose = np.random.normal(means[i], sigmas[i])
-                    #get likelihood (truth needs concat on last dimension), color accordingly
-                    #likelihood = -translate.get_loss(np.concatenate((means[i], sigmas[i]), len(means[i].shape)-1), sample_pose)
+                if flags.fk_show_samples:
+                    for j in range(48):
+                        sample_pose = np.random.normal(means[i], sigmas[i])
+                        #get likelihood (truth needs concat on last dimension), color accordingly
+                        #likelihood = -translate.get_loss(np.concatenate((means[i], sigmas[i]), len(means[i].shape)-1), sample_pose)
 
-                    xyz_sample = fkl(sample_pose, parent, offset, rotInd, expmapInd)
-                    lines  += get_lines(xyz_sample)
-                    colors += [(1, .8, .8) if lr else (.8, .8, 1) for lr in LR]
-                for j in range(16):
-                    sample_pose = np.random.normal(means[i], sigmas[i]/2)
-                    xyz_sample = fkl(sample_pose, parent, offset, rotInd, expmapInd)
-                    lines  += get_lines(xyz_sample)
-                    colors += [(1, .6, .6) if lr else (.6, .6, 1) for lr in LR]
-                #draw mean pose, slightly pale red blue to indicate predicting. On top of samples, so should stand out?
-                lines  += get_lines(xyz_pred[i])
-                colors += [(1, .3, .3) if lr else (.3, .3, 1) for lr in LR]
+                        xyz_sample = fkl(sample_pose, parent, offset, rotInd, expmapInd)
+                        lines  += get_lines(xyz_sample)
+                        colors += [(1, .9, .9) if lr else (.9, .9, 1) for lr in LR]
+                    for j in range(16):
+                        sample_pose = np.random.normal(means[i], sigmas[i]/2)
+                        xyz_sample = fkl(sample_pose, parent, offset, rotInd, expmapInd)
+                        lines  += get_lines(xyz_sample)
+                        colors += [(1, .6, .6) if lr else (.6, .6, 1) for lr in LR]
+                    #draw mean pose, slightly pale red blue to indicate predicting. On top of samples, so should stand out?
+                    lines  += get_lines(xyz_pred[i])
+                    colors += [(1, .3, .3) if lr else (.3, .3, 1) for lr in LR]
                 if flags.fk_show_truth:
                     lines += get_lines(xyz_gt[true_frames+i])
                     colors += [(0,0,0) for lr in LR]
 
                 drawer.draw_lines(lines, colors)
-                drawer.show(str(frame_number_to_save)+".png")
+                drawer.show("single_dist_upper_discussion/"+str(frame_number_to_save)+".png")
                 frame_number_to_save += 1
                 plt.pause(.3)
                 drawer.clear()
@@ -370,9 +375,9 @@ def main():
     parent, offset, rotInd, expmapInd = _some_variables()
     #directions, 1, 1, 180, 8, 10, 10 flips out
     action = "directions"
-    subject = 1
+    subject = 5
     subaction = 1
-    target_frame = 190
+    target_frame = 300
     history = 8
     true_frames = 10
     pred_frames = 10

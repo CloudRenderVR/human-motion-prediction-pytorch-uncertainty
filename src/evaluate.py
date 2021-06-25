@@ -270,7 +270,7 @@ def train():
         for ms in [80, 160, 320, 400, 560, 1000]:
           print(" {0:5d} \t|".format(ms), end="")
         print()
-        model.batch_size = 256
+        model.batch_size = 256 #256
         # === Validation with srnn's seeds ===
         for action in actions:
 
@@ -325,7 +325,7 @@ def train():
               sigmas_reverted = data_utils.revert_output_format(sigmas,
                 np.zeros(data_mean.shape), data_std, dim_to_ignore, actions, False)
               sigmas_reverted = np.array(sigmas_reverted)
-              experiment_sigmas = sigmas_reverted.copy().transpose([1,0,2])
+              experiment_sigmas = sigmas_reverted.copy()
 
               # Save the errors here
               mean_errors = np.zeros( (len(srnn_pred_expmap), srnn_pred_expmap[0].shape[0]) )
@@ -374,18 +374,31 @@ def train():
 
 
               SMSEs = np.zeros(experiment_truth.shape[0])
+
+              smse_sig = experiment_sigmas.copy()
+              smse_mean = experiment_predicted_means.copy()
               if flags.evaluate_do_SMSE:
-                  import pdb; pdb.set_trace()
-                  experiment_sigmas = experiment_sigmas[:, :, idx_to_use]
-                  K = 50
+                  smse_sig = smse_sig[:, 0, :]
+                  smse_mean = smse_mean[:, 0, :]
 
-                  samples = np.normal(experiment_truth, experiment_sigmas, K)
+                  smse_sig = smse_sig[:, idx_to_use]
 
-                  MAEs = np.zeros(K)
+                  SMSEmean = np.zeros((100, 14))
+                  for u in range(100):
+                  
+                    K = 50
 
-                  for q in range(K):
-                      MAEs[q] = np.sqrt(np.sum( (experiment_truth - samples[q])**2 , 2))
-                  SMSEs = MAEs.mean((0, 2))
+                    samples = np.random.normal(smse_mean, smse_sig, (K, 14, 48))
+
+                    MAEs = np.zeros((K, smse_mean.shape[0]))
+
+                    for q in range(K):
+                        MAEs[q] = np.sqrt(np.sum( (experiment_truth[:, 0, :] - samples[q])**2 , 1))
+                    SMSEs = MAEs
+                    #SMSEs = SMSEs.mean(2)
+                    SMSEs = SMSEs.min(0)
+                    SMSEmean[u] = SMSEs
+                  SMSEs = SMSEmean.mean(0)
 
               experiment_eucerror     = np.sqrt(np.sum( (experiment_truth - experiment_predicted_means)**2 , 2))
               experiment_meaneucerror = np.mean(experiment_eucerror, 1)

@@ -165,9 +165,26 @@ def taylor_approximation(derivatives, steps):
 if __name__ == "__main__":
     filename  = "./data/h3.6m/dataset/S1/walking_1.txt"
     model_location = "model_results/walking_euler_10_mle"
+    import time
+    time_start = time.time()
     action_sequence = data_utils.readCSVasFloat(filename)
+    time_load_data = time.time()
     model = torch.load(model_location)
+    time_load_model = time.time()
     prediction = get_both(5, model, action_sequence, 70)
-    print(prediction)
-    print(prediction[0][0][54], prediction[0][0][55], prediction[0][0][56], prediction[0][0][57], prediction[0][0][60], prediction[0][0][61], prediction[0][0][62])
+    time_inference = time.time()
+
+    print("Data Load Time", time_load_data - time_start)
+    print("Model Load Time", time_load_model - time_load_data)
+    print("Inference Time", time_inference - time_load_model)
+
+    import random
+    for i in range(50):
+        prediction = get_both(1, model, action_sequence, 70+random.randrange(500))
+
+    time_inference_50 = time.time()
+    print("Inference Time (avg 50)", (time_inference_50 - time_inference)/50)
+
+    #print(prediction)
+    #print(prediction[0][0][54], prediction[0][0][55], prediction[0][0][56], prediction[0][0][57], prediction[0][0][60], prediction[0][0][61], prediction[0][0][62])
     pass

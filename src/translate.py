@@ -229,7 +229,6 @@ def train():
       # === Training step ===
       encoder_inputs, decoder_inputs, decoder_outputs = clean_batch(model.get_batch( train_set, not args.omit_one_hot ))
       preds = model(encoder_inputs, decoder_inputs)
-
       step_loss = get_loss(preds, decoder_outputs)
     
       # Actual backpropagation
