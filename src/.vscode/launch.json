@@ -1,0 +1,42 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Train",
+            "type": "python",
+            "request": "launch",
+            "program": "src/evaluate.py",
+            "console": "integratedTerminal",
+            "cwd": "",
+            "args": [ "--residual_velocities", "--omit_one_hot", "--batch_size", "32", "--architecture", "basic", "--seq_length_in", "25", "--seq_length_out", "14", "--learning_rate", "0.000000011", "--iterations", "10000", "--test_every", "100", "--action", "walking", "--distribution_output_direct", "True" ]
+        },
+        {
+            "name": "Sample",
+            "type": "python",
+            "request": "launch",
+            "program": "src/evaluate.py",
+            "console": "integratedTerminal",
+            "cwd": "",
+            "args": [ "--residual_velocities", "--omit_one_hot", "--batch_size", "32", "--architecture", "basic", "--seq_length_in", "25", "--seq_length_out", "14", "--learning_rate", "0.000000011", "--iterations", "10000", "--test_every", "100", "--action", "walking", "--distribution_output_direct", "True", "--sample", "--load", "10000" ]
+        },
+        {
+            "name": "Visualize",
+            "type": "python",
+            "request": "launch",
+            "program": "src/forward_kinematics.py",
+            "console": "integratedTerminal",
+            "cwd": "",
+        },
+        {
+            "name": "Continuous prediction",
+            "type": "python",
+            "request": "launch",
+            "program": "src/continous_prediction.py",
+            "console": "integratedTerminal",
+            "cwd": "",
+        },
+    ]
+}

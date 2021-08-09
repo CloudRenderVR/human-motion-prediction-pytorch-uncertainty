@@ -301,6 +301,7 @@ def normalize_data( data, data_mean, data_std, dim_to_use, actions, one_hot ):
   if not one_hot:
     # No one-hot encoding... no need to do anything special
     for key in data.keys():
+      #TODO: here is where editing is goin on
       data_out[ key ] = np.divide( (data[key] - data_mean), data_std )
       data_out[ key ] = data_out[ key ][ :, dim_to_use ]
   else:
