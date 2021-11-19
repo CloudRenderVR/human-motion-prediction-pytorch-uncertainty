@@ -13,9 +13,15 @@ import forward_kinematics
 import test_pyplot
 import translate
 from time import sleep
-import win32pipe
-import win32file
+
 import struct
+
+if os.name == "nt":
+    import win32pipe
+    import win32file
+else:
+    from ipcqueue import posixmq
+    from ipcqueue.serializers import RawSerializer
 
 import sampling
 
@@ -122,6 +128,7 @@ class printPose(object):
             jointOffset = np.array(boneLength)
             print("Bone index {} length: {}".format(i, np.linalg.norm(jointOffset)))
             # Rotate the extended point in space around the origin.
+            # Sure we need to add the parent joint position here? We mat mul so this might be a double add
             localJointPosition = parentJointPosition + np.matmul(jointOffset, parentJointRotation)
 
             x = localJointPosition[0]
@@ -170,16 +177,19 @@ class printPose(object):
         return headPosition, sc.spatial.transform.Rotation.from_matrix(np.array(headRotation)).as_euler("zyx", degrees=True), [ yaw, pitch ]
 
 def createOutputFeed():
-    return win32pipe.CreateNamedPipe(
-        r"\\.\pipe\CVRInputFeed",
-        win32pipe.PIPE_ACCESS_OUTBOUND,
-        win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_WAIT,
-        1,
-        1024,
-        1024,
-        10000000,
-        None
-    )
+    if os.name == "nt":
+        return win32pipe.CreateNamedPipe(
+            r"\\.\pipe\CVRInputFeed",
+            win32pipe.PIPE_ACCESS_OUTBOUND,
+            win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_WAIT,
+            1,
+            1024,
+            1024,
+            10000000,
+            None
+        )
+    else:
+        return posixmq.Queue("/cvr_predictions", maxsize=1024, maxmsgsize=256, serializer=RawSerializer)
 
 def comparisonMath(directionGT, directionPred, positionGT, positionPred):
     return (directionGT - directionPred),(positionGT - positionPred)
@@ -299,20 +309,32 @@ def main():
 
         ms = time.time()*1000.0
         print("Time between frames - before it's piped {:.2f}".format(ms-newMs))
+
         # Send the pose data to the client.
         if pipeHandle:
             formatStr = "=Hffffff" + len(discretePoses) * "ff"  # Each prediction includes a delta xy, will include position as well later.
             unpackedPredictions = [ value for sub in predictedHeadDeltas for value in sub ]
             payload = struct.pack(formatStr, len(discretePoses), *gtHeadPos, *gtHeadRot, *unpackedPredictions)
-            try:
-                win32file.WriteFile(pipeHandle, payload)
-                print("Wrote to pipe in " + str(ms))
-            except Exception as e:
-                print("Failed to write to pipe: {}".format(e))
+            if os.name == "nt":
+                try:
+                    win32file.WriteFile(pipeHandle, payload)
+                    print("Wrote to pipe in " + str(ms))
+                except Exception as e:
+                    print("Failed to write to pipe: {}".format(e))
+            else:
+                try:
+                    pipeHandle.put(payload, block=False)
+                except Exception as e:
+                    print("Failed to write to pipe: {}".format(e))
+
         ms = time.time()*1000.0
         print("Time between frames {:.2f}".format(ms-newMs))
 
-    win32file.CloseHandle(pipeHandle)
+    if pipeHandle:
+        if os.name == "nt":
+            win32file.CloseHandle(pipeHandle)
+        else:
+            pipeHandle.close()
 
 if __name__ == '__main__':
   main()

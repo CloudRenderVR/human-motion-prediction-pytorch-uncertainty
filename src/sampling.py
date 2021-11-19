@@ -3,7 +3,7 @@ import random
 
 import forward_kinematics
 
-sampleCount = 1000
+sampleCount = 10#1000
 discreteSamples = 4
 # List of indices into the model output.
 headBoneChain = [  # Note: I think these are the correct indices?
