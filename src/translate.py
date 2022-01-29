@@ -109,7 +109,10 @@ train_dir = os.path.normpath(os.path.join( args.train_dir, args.action,
   'residual_vel' if args.residual_velocities else 'not_residual_vel'))
 
 print(train_dir)
-os.makedirs(train_dir, exist_ok=True)
+try:
+    os.makedirs(train_dir)
+except OSError as e:
+    print("Directory Exists, continue")
 
 def create_model(actions, sampling=False):
   """Create translation model and initialize or load parameters in session."""

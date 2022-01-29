@@ -191,6 +191,10 @@ def createOutputFeed():
     else:
         return posixmq.Queue("/cvr_predictions", maxsize=1024, maxmsgsize=256, serializer=RawSerializer)
 
+#create input feed, assuming will only run on linux machines
+def createInputFeed():
+    return posixmq.Queue("/cvr_input", maxsize=1024, maxmsgsize=256, serializer=RawSerializer)
+
 def comparisonMath(directionGT, directionPred, positionGT, positionPred):
     return (directionGT - directionPred),(positionGT - positionPred)
     
@@ -226,10 +230,20 @@ def main():
     print("Total test frames: {}".format(data.shape[0]))
 
     pipeHandle = createOutputFeed()
-
+    #TODO: make queue of poses
+    inputHandle = createInputFeed()
+    poseSequence = []
+    
+    #TODO: change to while inputHandle is receiving data
     for i in range(data.shape[0]):  # Range incorrect?
         newMs = time.time()*1000.0
-        # Create prediction.
+        #TODO: Create prediction.
+        """
+        if(len(poseSequence) >= pastHistoryFrames):
+            poseSequence.pop(0)
+        currPose = inputHandle.get()
+        poseSequence.append(currPose)
+        """
         #poses_in = data[target_frame-pastHistoryFrames+i:target_frame+i]
         poses_in = data[i : i + true_frames]
         #poses_in = data[target_frame - true_frames + i:target_frame+pred_frames + i]
@@ -334,7 +348,9 @@ def main():
         if os.name == "nt":
             win32file.CloseHandle(pipeHandle)
         else:
+            #close both
             pipeHandle.close()
+            inputHandle.close()
 
 if __name__ == '__main__':
   main()

@@ -102,6 +102,7 @@ class Seq2SeqModel(nn.Module):
 
 
   def forward(self, encoder_inputs, decoder_inputs):
+    #torch.autograd.set_detect_anomaly(True)
     #Might fix some backwards compatability with previous pickled networks
     try:
       a = self.finite_taylor_extrapolate
@@ -153,7 +154,7 @@ class Seq2SeqModel(nn.Module):
       
 #      state = F.dropout(state, self.dropout, training=self.training)
       output = self.fc_out(F.dropout(state, self.dropout, training=self.training))
-      output[..., :54] += inp
+      output[..., :54] = output[..., :54]+inp
       if(self.output_as_normal_distribution):
         output[..., 54:] = nn.ELU()(output[..., 54:]) + 1.001
       if(self.finite_taylor_extrapolate):
@@ -164,7 +165,8 @@ class Seq2SeqModel(nn.Module):
 #    return outputs, state
 
     outputs = torch.cat(outputs, 0)
-    return torch.transpose(outputs, 0, 1)
+    outputs = torch.transpose(outputs, 0, 1)
+    return outputs
 
 
   def get_batch( self, data, actions ):
