@@ -53,7 +53,7 @@ class Ax3DPose(object):
 
     assert channels.size == 96, "channels should have 96 entries, it has %d instead" % channels.size
     vals = np.reshape( channels, (32, -1) )
-
+    
     for i in np.arange( len(self.I) ):
       x = np.array( [vals[self.I[i], 0], vals[self.J[i], 0]] )
       y = np.array( [vals[self.I[i], 1], vals[self.J[i], 1]] )

@@ -29,12 +29,16 @@ def fkl( angles, parent, offset, rotInd, expmapInd ):
   Returns
     xyz: 32x3 3d points that represent a person in 3d space
   """
-
+  dimsIgnored= [10, 11, 16, 17, 18, 19, 20, 25, 26, 31, 32, 33, 34, 35, 48, 49, 50, 58, 59, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 82, 83, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98]
+  for i in dimsIgnored:
+      angles[i] = 0
+  #print(angles)
   assert len(angles) == 99
 
   # Structure that indicates parents for each joint
   njoints   = 32
   xyzStruct = [dict() for x in range(njoints)]
+
 
   for i in np.arange( njoints ):
 
@@ -60,10 +64,10 @@ def fkl( angles, parent, offset, rotInd, expmapInd ):
 
   xyz = [xyzStruct[i]['xyz'] for i in range(njoints)]
   xyz = np.array( xyz ).squeeze()
+  
   xyz = xyz[:,[0,2,1]]
+  
   # xyz = xyz[:,[2,0,1]]
-
-
   return np.reshape( xyz, [-1] )
 
 def revert_coordinate_space(channels, R0, T0):
@@ -299,8 +303,9 @@ def main():
 
             # Helper which extracts lines from an xyz returned from fkl. Should probably be somewhere else.
             def get_lines(xyz):
-                I = np.array([1, 2, 3, 1, 7, 8, 1, 13, 14, 15, 14, 18, 19, 14, 26, 27]) - 1
-                J = np.array([2, 3, 4, 7, 8, 9, 13, 14, 15, 16, 18, 19, 20, 26, 27, 28]) - 1
+                
+                I = np.array([1, 2, 3, 1, 7, 8, 1, 13, 14, 15, 14, 18, 19, 14, 26, 27]) - 1 #
+                J = np.array([2, 3, 4, 7, 8, 9, 13, 14, 15, 16, 18, 19, 20, 26, 27, 28]) - 1 #
                 lines_to_ret = []
                 for j in range(len(I)):
                     start_point = ( xyz[I[j]*3 + 0],

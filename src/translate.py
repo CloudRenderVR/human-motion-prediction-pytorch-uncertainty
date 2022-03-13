@@ -199,7 +199,8 @@ def train():
   #these will all be expangles
   train_set, test_set, data_mean, data_std, dim_to_ignore, dim_to_use = read_all_data(
     actions, args.seq_length_in, args.seq_length_out, args.data_dir, not args.omit_one_hot )
-
+  
+  
   # Limit TF to take a fraction of the GPU memory
 
   if True:
@@ -231,6 +232,11 @@ def train():
 
       # === Training step ===
       encoder_inputs, decoder_inputs, decoder_outputs = clean_batch(model.get_batch( train_set, not args.omit_one_hot ))
+      
+      print("Encoder Inputs"+str(len(encoder_inputs)))
+      
+      print("Decoder inputs"+str(len(decoder_inputs)))
+      
       preds = model(encoder_inputs, decoder_inputs)
       step_loss = get_loss(preds, decoder_outputs)
     

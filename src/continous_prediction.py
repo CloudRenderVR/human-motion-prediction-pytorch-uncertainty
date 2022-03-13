@@ -61,6 +61,8 @@ class printPose(object):
     def getLines(self, xyzPose):
         # Make connection matrix
         lines = []
+        
+        
         for i in range( len(self.I) ):
             start_point = ( xyzPose[self.I[i]*3 + 0],
                             xyzPose[self.I[i]*3 + 1],
@@ -161,6 +163,7 @@ class printPose(object):
 
         # Disabled drawing.
         # Draw the head look direction
+        
         self.drawer.draw_look_direction([ lines[8], lines[9] ])
 
         yaw, pitch, roll = [ 0., 0., 0. ]
@@ -189,11 +192,12 @@ def createOutputFeed():
             None
         )
     else:
-        return posixmq.Queue("/cvr_predictions", maxsize=1024, maxmsgsize=256, serializer=RawSerializer)
+        return posixmq.Queue("/cvr_predictions") #, maxsize=1024, maxmsgsize=256, serializer=(RawSerializer())
 
 #create input feed, assuming will only run on linux machines
+
 def createInputFeed():
-    return posixmq.Queue("/cvr_input", maxsize=1024, maxmsgsize=256, serializer=RawSerializer)
+    return posixmq.Queue("/cvr_input") #, maxsize=1024, maxmsgsize=256, serializer=(RawSerializer())
 
 def comparisonMath(directionGT, directionPred, positionGT, positionPred):
     return (directionGT - directionPred),(positionGT - positionPred)
@@ -229,9 +233,9 @@ def main():
 
     print("Total test frames: {}".format(data.shape[0]))
 
-    pipeHandle = createOutputFeed()
+    #pipeHandle = createOutputFeed()
     #TODO: make queue of poses
-    inputHandle = createInputFeed()
+    #inputHandle = createInputFeed()
     poseSequence = []
     
     #TODO: change to while inputHandle is receiving data
@@ -241,16 +245,23 @@ def main():
         """
         if(len(poseSequence) >= pastHistoryFrames):
             poseSequence.pop(0)
-        currPose = inputHandle.get()
+        currPose = inputHandle.get(block=(False))
         poseSequence.append(currPose)
         """
         #poses_in = data[target_frame-pastHistoryFrames+i:target_frame+i]
         poses_in = data[i : i + true_frames]
+        
         #poses_in = data[target_frame - true_frames + i:target_frame+pred_frames + i]
-        t = time.time()
         print("Model source seq len: {}, model input size: {}".format(model.source_seq_len, model.input_size))
+        
         means, sigmas = model_caller.predict(model, poses_in, true_frames - 1, use_noise=False)
-
+        count = 0
+        for supertempvar in poses_in[0]:
+            if(supertempvar != 0):
+                count+=1 
+                
+        print("there were nonZero: " + str(count))
+        
         # Generate our target poses.
         discretePoses = sampling.generateSamples(means, sigmas, ob)
         
@@ -263,6 +274,7 @@ def main():
         print("Transformed model data to forward kinematic pose data in {:.3f}s".format(time.time() - t))
         
         xyz_gt_future = np.zeros((1, 96))
+        
         xyz_gt_future[0, :] = forward_kinematics.fkl(data[i+48:true_frames + i+48][0, :], ob.parent, ob.offset, ob.rotInd, ob.expmapInd)
         
         # Render the future ground truth.
@@ -323,7 +335,7 @@ def main():
 
         ms = time.time()*1000.0
         print("Time between frames - before it's piped {:.2f}".format(ms-newMs))
-
+        '''
         # Send the pose data to the client.
         if pipeHandle:
             formatStr = "=Hffffff" + len(discretePoses) * "ff"  # Each prediction includes a delta xy, will include position as well later.
@@ -340,10 +352,10 @@ def main():
                     pipeHandle.put(payload, block=False)
                 except Exception as e:
                     print("Failed to write to pipe: {}".format(e))
-
+                    '''
         ms = time.time()*1000.0
         print("Time between frames {:.2f}".format(ms-newMs))
-
+        
     if pipeHandle:
         if os.name == "nt":
             win32file.CloseHandle(pipeHandle)
