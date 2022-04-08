@@ -224,11 +224,13 @@ def main():
     model = torch.load(model_dir)
     print("Model load time: {:.3f}s".format(time.time() - t))
 
+    """
+    #comment section out when runninig on xavier
     #define vars for printing
     fig = plt.figure()
     ax = plt.gca(projection='3d')
     ob = printPose(ax)
-
+    """
     translate.flags.translate_loss_func = "mle"
 
     print("Total test frames: {}".format(data.shape[0]))
@@ -328,11 +330,13 @@ def main():
 
         print("Next Frame :)")
 
+        """
+        commented out for running on xavier
         # Disabled drawing.
         ob.drawer.show()
         plt.pause(.01)
         ob.drawer.clear()
-
+        """
         ms = time.time()*1000.0
         print("Time between frames - before it's piped {:.2f}".format(ms-newMs))
         '''
