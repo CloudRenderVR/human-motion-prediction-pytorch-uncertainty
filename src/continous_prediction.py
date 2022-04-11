@@ -224,13 +224,12 @@ def main():
     model = torch.load(model_dir)
     print("Model load time: {:.3f}s".format(time.time() - t))
 
-    """
-    #comment section out when runninig on xavier
+    
     #define vars for printing
     fig = plt.figure()
     ax = plt.gca(projection='3d')
     ob = printPose(ax)
-    """
+    
     translate.flags.translate_loss_func = "mle"
 
     print("Total test frames: {}".format(data.shape[0]))
