@@ -1,11 +1,17 @@
 import numpy as np
 import math
 import torch
-import matplotlib.pyplot as plt
-plt.use('Agg')
-
 
 import os
+
+import matplotlib as mpl
+if os.environ.get('DISPLAY','') == '':
+    print('no display found. Using non-interactive Agg backend')
+    mpl.use('Agg')
+import matplotlib.pyplot as plt
+
+
+
 import time
 import scipy as sc
 from scipy import spatial
