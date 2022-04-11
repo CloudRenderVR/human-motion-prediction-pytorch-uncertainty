@@ -226,7 +226,7 @@ def main():
 
     
     #define vars for printing
-    fig = plt.figure()
+    #fig = plt.figure()
     ax = plt.gca(projection='3d')
     ob = printPose(ax)
     
