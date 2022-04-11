@@ -2,6 +2,8 @@ import numpy as np
 import math
 import torch
 import matplotlib.pyplot as plt
+plt.use('Agg')
+
 
 import os
 import time
@@ -226,7 +228,7 @@ def main():
 
     
     #define vars for printing
-    #fig = plt.figure()
+    fig = plt.figure()
     ax = plt.gca(projection='3d')
     ob = printPose(ax)
     
