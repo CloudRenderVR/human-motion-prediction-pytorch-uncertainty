@@ -1,0 +1,3 @@
+pip install h5py
+pip install six
+pip install torch torchvision
