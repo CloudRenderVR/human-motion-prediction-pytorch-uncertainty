@@ -156,7 +156,10 @@ class Seq2SeqModel(nn.Module):
       output = self.fc_out(F.dropout(state, self.dropout, training=self.training))
       output[..., :54] = output[..., :54]+inp
       if(self.output_as_normal_distribution):
-        output[..., 54:] = nn.ELU()(output[..., 54:]) + 1.001
+        #output[..., 54:] = nn.ELU()(output[..., 54:]) + 1.001
+        tensorCopy = output[...,54:].clone()
+        output[..., 54:] = nn.ELU(inplace=False)(tensorCopy)
+        output[..., 54:] += 1.001
       if(self.finite_taylor_extrapolate):
         output = output + taylor_preds[i]
       outputs.append(output.view([1, batchsize, self.input_size*(2 if self.output_as_normal_distribution else 1)]))

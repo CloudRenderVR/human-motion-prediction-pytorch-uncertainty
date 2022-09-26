@@ -293,7 +293,9 @@ def main():
 
             ### SOME SETUP FOR PLOTTING ### ============================================
             fig = plt.figure()
-            ax = plt.gca(projection='3d')
+            # changed in recent version of mpl
+            #ax = plt.gca(projection='3d')
+            ax = plt.axes(projection="3d")
 
             # Left / right indicator
             LR = np.array([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1], dtype=bool)
