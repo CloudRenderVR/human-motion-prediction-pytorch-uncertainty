@@ -3,6 +3,7 @@ import math
 import torch
 
 import os
+import sys
 
 import matplotlib as mpl
 if os.environ.get('DISPLAY','') == '':
@@ -23,6 +24,7 @@ import translate
 from time import sleep
 
 import struct
+import pickle
 
 if os.name == "nt":
     import win32pipe
@@ -190,7 +192,7 @@ class printPose(object):
 def createOutputFeed():
     if os.name == "nt":
         return win32pipe.CreateNamedPipe(
-            r"\\.\pipe\CVRInputFeed",
+            r"\\.\pipe\CVROutputFeed",
             win32pipe.PIPE_ACCESS_OUTBOUND,
             win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_WAIT,
             1,
@@ -204,13 +206,71 @@ def createOutputFeed():
 
 #create input feed, assuming will only run on linux machines
 
+win32PipeName = r"\\.\pipe\CVRInputFeed"
+
 def createInputFeed():
-    return posixmq.Queue("/cvr_input") #, maxsize=1024, maxmsgsize=256, serializer=(RawSerializer())
+    if os.name == "nt":
+        #return win32pipe.CreateNamedPipe(
+        #    win32PipeName,
+        #    win32pipe.PIPE_ACCESS_INBOUND,
+        #    win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_WAIT,
+        #    1,
+        #    1024,
+        #    1024,
+        #    10000000,
+        #    None
+        #)
+        return win32file.CreateFile(win32PipeName, win32file.GENERIC_READ, 0, None, win32file.OPEN_EXISTING, 0, 0)
+    else:
+        return posixmq.Queue("/cvr_input") #, maxsize=1024, maxmsgsize=256, serializer=(RawSerializer())
 
 def comparisonMath(directionGT, directionPred, positionGT, positionPred):
     return (directionGT - directionPred),(positionGT - positionPred)
     
+def Streaming(model, pastHistoryFrames, ob, pipe):
+    historicalPoses = np.zeros(shape=(pastHistoryFrames, 99))
+    frame = 0
+    while True:
+        # Load expmap from the pipe
+        buffer = None
+        try:
+            result, buffer = win32file.ReadFile(pipe, 1024, None)
+            if result != 0:
+                print(f"ERROR: failed to read from named pipe in input streaming with code {result}")
+                exit(1)
+            print(f"Loaded {len(buffer)} bytes from the input pipe!")
+        except win32file.error as e:
+            if e.winerror == 536:
+                print("Waiting for sending process to open the pipe...")
+                sleep(1)
+                continue
+            else:
+                raise(e)
+
+        buffer = pickle.loads(buffer)
+
+        if frame < historicalPoses.shape[0]:
+            historicalPoses[frame] = buffer
+        else:
+            historicalPoses = np.roll(historicalPoses, -1)
+            # replace the oldest pose
+            historicalPoses[-1] = buffer
+
+        poses_in = historicalPoses
+        means, sigmas = model_caller.predict(model, poses_in, pastHistoryFrames - 1, use_noise=False)
+        if means is None or sigmas is None:
+            continue # Bad data
+        discretePoses = sampling.generateSamples(means, sigmas, ob)
+        predHeadPos, predHeadRot, predictionDeltas = ob.printHead2(discretePoses[0], False)
+
+        print("Predicted head pos: {}, rot: {}".format(predHeadPos, predHeadRot))
+        frame += 1
+
 def main():
+    positionStreaming = False
+    if "--streaming" in sys.argv:
+        positionStreaming = True
+        print("Started in streaming mode")
     pastHistoryFrames = 50  # How many frames in the past to sample for future predictions. ( I think? check )
     predictedFrames = 10  # How many frames in advance to speculate.
     model_dir = "model_results/discussion_10_mle"
@@ -222,10 +282,11 @@ def main():
     target_frame = 230  # What is this?
     true_frames = pastHistoryFrames
     pred_frames = predictedFrames
-    t = time.time()
-    data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
-    print("Dataset load time: {:.3f}s".format(time.time() - t))
-    data = data[0][(subject, action, subaction, "even")]
+    if not positionStreaming:
+        t = time.time()
+        data = data_utils.load_data(os.path.normpath("./data/h3.6m/dataset"), [subject], [action], False)
+        print("Dataset load time: {:.3f}s".format(time.time() - t))
+        data = data[0][(subject, action, subaction, "even")]
 
     # Load the model
     t = time.time()
@@ -235,17 +296,26 @@ def main():
     
     #define vars for printing
     fig = plt.figure()
-    ax = plt.gca(projection='3d')
+    #ax = plt.gca(projection='3d')
+    ax = plt.axes(projection='3d')
     ob = printPose(ax)
     
     translate.flags.translate_loss_func = "mle"
 
-    print("Total test frames: {}".format(data.shape[0]))
-
     #pipeHandle = createOutputFeed()
     #TODO: make queue of poses
-    #inputHandle = createInputFeed()
+    inputHandle = None
+    if positionStreaming:
+        inputHandle = createInputFeed()
     poseSequence = []
+
+    if positionStreaming:
+        Streaming(model, pastHistoryFrames, ob, inputHandle)
+        if os.name == "nt":
+            win32file.CloseHandle(inputHandle)
+        return
+
+    print("Total test frames: {}".format(data.shape[0]))
     
     #TODO: change to while inputHandle is receiving data
     for i in range(data.shape[0]):  # Range incorrect?
@@ -259,6 +329,8 @@ def main():
         """
         #poses_in = data[target_frame-pastHistoryFrames+i:target_frame+i]
         poses_in = data[i : i + true_frames]
+
+        print(f"poses_in shape: {poses_in.shape}, true_frames={true_frames}, i={i}")
         
         #poses_in = data[target_frame - true_frames + i:target_frame+pred_frames + i]
         print("Model source seq len: {}, model input size: {}".format(model.source_seq_len, model.input_size))
@@ -267,7 +339,7 @@ def main():
         count = 0
         for supertempvar in poses_in[0]:
             if(supertempvar != 0):
-                count+=1 
+                count+=1
                 
         print("there were nonZero: " + str(count))
         

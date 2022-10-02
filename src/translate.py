@@ -95,6 +95,7 @@ parser.add_argument('--sample', dest='sample',
 parser.add_argument('--distribution_output_direct', dest='distribution_output_direct',
                   default=False)
 
+parser.add_argument('--streaming', dest='streaming_mode', action='store_true', default=False)
 args = parser.parse_args()
 
 train_dir = os.path.normpath(os.path.join( args.train_dir, args.action,

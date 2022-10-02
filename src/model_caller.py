@@ -17,6 +17,10 @@ def predict(model, poses_in, current, use_noise = True):
     #This standardizes from mean and std of all the data. Might not be best to use on a single case
     data_mean, data_std, dim_to_ignore, dim_to_use = data_utils.normalization_stats(poses_in)
 
+    if len(dim_to_use) < 54:
+        print("ERROR: not enough dimensions made the cut after normalization, skipping")
+        return None, None
+
     #data_utils expects a dict, nothing fancy, immediately deconvert it afterwards
     poses_dict = {0:poses_in}
     #this also removes the 0's from the input data, reducing to 54 dimensions

@@ -337,4 +337,22 @@ def normalization_stats(completeData):
 
   data_std[dimensions_to_ignore] = 1.0
 
+  # TEMP: hacking fix while the input data is mostly 0s
+  #dimensions_to_use = []
+  #dimensions_to_use.extend(list(np.where(data_std != 99999.999)[0]))
+  #dimensions_to_ignore = []
+  # won't work since we need 54 specific dimensions!
+
+  # TEMP: i have no idea why we need this... bad format maybe?
+  numToRemove = len(dimensions_to_use) - 54
+  if len(dimensions_to_use) != 54 and not numToRemove > 0:
+    print(f"ERROR: dims_to_use is not the expected 54! dims={len(dimensions_to_use)}")
+  if numToRemove > 0:
+    print(f"ERROR: strange dimensions behavior, removing some dims from the end. really need to fix this!! (removing {numToRemove} dims)")
+    ignoreMe = dimensions_to_use[-(numToRemove) : ]
+    print(f"extending by {len(ignoreMe)}")
+    dimensions_to_ignore.extend(ignoreMe)
+    dimensions_to_use = dimensions_to_use[ : len(dimensions_to_use) - numToRemove]
+    assert(len(dimensions_to_ignore) == 99 - 54)
+
   return data_mean, data_std, dimensions_to_ignore, dimensions_to_use

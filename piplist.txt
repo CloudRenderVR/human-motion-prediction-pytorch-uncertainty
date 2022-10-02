@@ -2,3 +2,5 @@ pip install h5py
 pip install six
 pip install torch==1.12.1+cu116 -f https://download.pytorch.org/whl/torch_stable.html
 pip install matplotlib
+pip install scipy
+pip install pywin32
