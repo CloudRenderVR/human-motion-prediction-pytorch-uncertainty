@@ -230,11 +230,34 @@ def comparisonMath(directionGT, directionPred, positionGT, positionPred):
 def Streaming(model, pastHistoryFrames, ob, pipe):
     historicalPoses = np.zeros(shape=(pastHistoryFrames, 99))
     frame = 0
+    pdr = open("poseDataRaw.txt", "w+")
+    # ripped plotting code from forward_kinematics.py:295
+    ###########################################################
+    fig = plt.figure()
+    ax = plt.axes(projection="3d")
+    LR = np.array([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1], dtype=bool)
+    import test_pyplot
+    drawer = test_pyplot.AnActuallySaneWayOfDrawingThings(ax, -500, -500, -500, 500, 500, 500)
+    def get_lines(xyz):        
+        I = np.array([1, 2, 3, 1, 7, 8, 1, 13, 14, 15, 14, 18, 19, 14, 26, 27]) - 1 #
+        J = np.array([2, 3, 4, 7, 8, 9, 13, 14, 15, 16, 18, 19, 20, 26, 27, 28]) - 1 #
+        lines_to_ret = []
+        for j in range(len(I)):
+            start_point = ( xyz[I[j]*3 + 0],
+                            xyz[I[j]*3 + 1],
+                            xyz[I[j]*3 + 2] )
+            end_point  =  ( xyz[J[j]*3 + 0],
+                            xyz[J[j]*3 + 1],
+                            xyz[J[j]*3 + 2] )
+            lines_to_ret.append((start_point, end_point))
+        return lines_to_ret
+    ###########################################################
+
     while True:
         # Load expmap from the pipe
         buffer = None
         try:
-            result, buffer = win32file.ReadFile(pipe, 1024, None)
+            result, buffer = win32file.ReadFile(pipe, 2048*64, None)
             if result != 0:
                 print(f"ERROR: failed to read from named pipe in input streaming with code {result}")
                 exit(1)
@@ -248,6 +271,12 @@ def Streaming(model, pastHistoryFrames, ob, pipe):
                 raise(e)
 
         buffer = pickle.loads(buffer)
+        # TEMP: value seem way too small, what happens if we scale up
+        #buffer = buffer * 1000.0
+        pdr.write(f"{frame}\n")
+        pdr.write(str(buffer))
+        pdr.write("\n")
+        pdr.flush()
 
         if frame < historicalPoses.shape[0]:
             historicalPoses[frame] = buffer
@@ -256,6 +285,16 @@ def Streaming(model, pastHistoryFrames, ob, pipe):
             # replace the oldest pose
             historicalPoses[-1] = buffer
 
+        # Render the ground truth
+        parent, offset, rotInd, expmapInd = forward_kinematics._some_variables()
+        bufferFkl = forward_kinematics.fkl(buffer, parent, offset, rotInd, expmapInd)
+        lines = get_lines(buffer)
+        drawer.clear()
+        drawer.draw_lines(lines, [(1, 0, 0) if lr else (0, 0, 1) for lr in LR])
+        drawer.show(f"streamedPose_frame{frame}")
+        plt.pause(0.2)
+        plt.savefig(f"tempPics/f{frame}.png")
+
         poses_in = historicalPoses
         means, sigmas = model_caller.predict(model, poses_in, pastHistoryFrames - 1, use_noise=False)
         if means is None or sigmas is None:
@@ -263,7 +302,7 @@ def Streaming(model, pastHistoryFrames, ob, pipe):
         discretePoses = sampling.generateSamples(means, sigmas, ob)
         predHeadPos, predHeadRot, predictionDeltas = ob.printHead2(discretePoses[0], False)
 
-        print("Predicted head pos: {}, rot: {}".format(predHeadPos, predHeadRot))
+        print("Frame {}, predicted head pos: {}, rot: {}".format(frame, predHeadPos, predHeadRot))
         frame += 1
 
 def main():
@@ -302,7 +341,7 @@ def main():
     
     translate.flags.translate_loss_func = "mle"
 
-    #pipeHandle = createOutputFeed()
+    pipeHandle = createOutputFeed()
     #TODO: make queue of poses
     inputHandle = None
     if positionStreaming:
@@ -418,7 +457,7 @@ def main():
         """
         ms = time.time()*1000.0
         print("Time between frames - before it's piped {:.2f}".format(ms-newMs))
-        '''
+        
         # Send the pose data to the client.
         if pipeHandle:
             formatStr = "=Hffffff" + len(discretePoses) * "ff"  # Each prediction includes a delta xy, will include position as well later.
@@ -435,7 +474,7 @@ def main():
                     pipeHandle.put(payload, block=False)
                 except Exception as e:
                     print("Failed to write to pipe: {}".format(e))
-                    '''
+                    
         ms = time.time()*1000.0
         print("Time between frames {:.2f}".format(ms-newMs))
         

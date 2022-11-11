@@ -10,6 +10,7 @@ from six.moves import xrange # pylint: disable=redefined-builtin
 import copy
 import flags
 import data_utils
+import random
 
 def rotmat2euler( R ):
   """
@@ -251,6 +252,7 @@ def load_data(path_to_dataset, subjects, actions, one_hot):
 
         n, d = action_sequence.shape
 
+        print(f"Loaded expmap CSV, shape=({n},{d})")
 
         if flags.convert_to_euler_first:
           for j in np.arange(n):
@@ -347,6 +349,14 @@ def normalization_stats(completeData):
   numToRemove = len(dimensions_to_use) - 54
   if len(dimensions_to_use) != 54 and not numToRemove > 0:
     print(f"ERROR: dims_to_use is not the expected 54! dims={len(dimensions_to_use)}")
+    # re-add some random dims
+    for i in range(numToRemove * -1):
+      while True:
+        d = random.randint(0, 99-1)
+        if d not in dimensions_to_use:
+          dimensions_to_use.append(d)
+          dimensions_to_ignore.remove(d)
+          break
   if numToRemove > 0:
     print(f"ERROR: strange dimensions behavior, removing some dims from the end. really need to fix this!! (removing {numToRemove} dims)")
     ignoreMe = dimensions_to_use[-(numToRemove) : ]
