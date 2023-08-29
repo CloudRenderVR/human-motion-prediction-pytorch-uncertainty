@@ -1,3 +1,26 @@
+## EDITS BY ISMET FOR THE FIRST STARTERS:
+
+Pip installation :
+```bash
+pip3 install ipcqueue
+```
+
+Try wget below [command line](https://github.com/CloudRenderVR/human-motion-prediction-pytorch-uncertainty#get-this-code-and-the-data), 
+if not work(It did not on my attempt, 8/29/2023), so just copy from Xavier-nx :
+```bash
+mkdir data
+cd data
+scp -r xaviernx@xavier-nx.mines.edu:/home/andrewdepke/motionPrediction/data/* .
+```
+
+For a quick profiling, run continous prediction (naive version is outdated):
+```bash
+python3 src/continous_prediction2.py
+```
+
+
+
+
 
 ## human-motion-prediction
 This should eventually be an addition of uncertainty prediction (in the form of a covariance matrix) to
